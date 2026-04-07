@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+server/__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+inference_report.json
+*.pyc
+*.pyo
+*.pyd

@@ -1,0 +1,11 @@
+spec_version: 1
+name: autodrive_env
+type: space
+runtime: fastapi
+app: autodrive_env.server.app:app
+port: 8000
+description: "AutoDrive Gym for autonomous driving in Indian road conditions."
+tags:
+  - openenv
+  - driving
+  - autonomous-vehicles
