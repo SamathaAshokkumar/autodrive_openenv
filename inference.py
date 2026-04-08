@@ -21,18 +21,30 @@ API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or "missing-token"
 BENCHMARK = os.getenv("AUTODRIVE_BENCHMARK", "autodrive_env")
 MAX_STEPS = int(os.getenv("AUTODRIVE_MAX_STEPS", "20"))
 
-SYSTEM_PROMPT = """You are an autonomous driving agent for Indian road conditions.
+SYSTEM_PROMPT = """You are an autonomous driving agent operating in dense Indian road conditions.
 
-Priorities:
-1. Safety
-2. Smooth recovery
-3. Forward progress
+STAGE LOGIC (follow strictly):
+- scenario_stage="approaching" : A hazard is ahead. BRAKE or WAIT to stay safe.
+- scenario_stage="clearing"    : The hazard has passed. ACCELERATE gently to resume driving.
+- scenario_stage="cleared"     : Road is open. ACCELERATE and maintain forward progress.
 
-Return ONLY JSON:
-{
-  "action": "accelerate|brake|steer_left|steer_right|horn|wait|change_lane_left|change_lane_right",
-  "value": <float 0 to 1>
-}
+DECISION GUIDE:
+- hazard_distance < 5  : BRAKE immediately  (value 0.8-1.0)
+- hazard_distance 5-12 : WAIT or slow brake  (value 0.3-0.6)
+- hazard_distance > 12 OR stage=clearing/cleared : ACCELERATE (value 0.4-0.7)
+
+SUDDEN ALERTS (active_alerts):
+- ambulance / police_override : pull left or wait, create corridor
+- animal / pedestrian         : brake and wait until cleared
+- traffic_jam                 : brake, maintain distance, wait for gap
+- speed_breaker / pothole     : slow down, steer around smoothly
+
+Rules:
+- Never repeat the same action more than 3 times in a row unless the hazard is still blocking.
+- If hint says "accelerate", always choose accelerate.
+
+Return ONLY valid JSON — no explanation:
+{"action": "accelerate|brake|steer_left|steer_right|horn|wait|change_lane_left|change_lane_right", "value": <float 0.0-1.0>}
 """
 
 
@@ -87,21 +99,49 @@ def normalize_action(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def build_prompt(observation: Any, step_index: int) -> str:
-    raw_obs = {
-        "command_output": getattr(observation, "command_output", ""),
-        "scene_summary": getattr(observation, "scene_summary", ""),
-        "sensor_data": getattr(observation, "sensor_data", {}) or {},
-        "ego_state": getattr(observation, "ego_state", {}) or {},
-        "environment": getattr(observation, "environment", {}) or {},
-        "event_log": getattr(observation, "event_log", ""),
-        "steps_taken": getattr(observation, "steps_taken", 0),
-        "max_steps": getattr(observation, "max_steps", MAX_STEPS),
-        "scenario_type": getattr(observation, "scenario_type", ""),
+    stage        = getattr(observation, "scenario_stage",  "") or "approaching"
+    hazard_dist  = float(getattr(observation, "hazard_distance", 999.0) or 999.0)
+    hazard_type  = getattr(observation, "hazard_type",     "") or ""
+    hazard_status= getattr(observation, "hazard_status",   "") or ""
+    alerts       = getattr(observation, "active_alerts",   []) or []
+    event_log    = getattr(observation, "event_log",        "") or ""
+    hint         = getattr(observation, "hint",             "") or ""
+    ego          = getattr(observation, "ego_state",        {}) or {}
+    env          = getattr(observation, "environment",      {}) or {}
+    cmd_out      = getattr(observation, "command_output",   "") or ""
+
+    # Derive plain-English guidance so even a modest LLM understands what to do
+    if hint and ("accelerate" in hint.lower() or stage in ("clearing", "cleared")):
+        guidance = f"CLEARED — {hint or 'Hazard gone. ACCELERATE now.'}"
+    elif hazard_dist < 5.0:
+        guidance = f"DANGER — {hazard_type or 'hazard'} only {hazard_dist:.1f}m away. BRAKE immediately."
+    elif hazard_dist <= 12.0:
+        guidance = f"CAUTION — {hazard_type or 'hazard'} at {hazard_dist:.1f}m. WAIT or slow brake."
+    else:
+        guidance = "PATH CLEAR — maintain or ACCELERATE."
+
+    obs_dict = {
+        "guidance":        guidance,
+        "scenario_stage":  stage,
+        "hazard_type":     hazard_type,
+        "hazard_distance": round(hazard_dist, 1),
+        "hazard_status":   hazard_status,
+        "event_log":       event_log,
+        "active_alerts":   alerts,
+        "command_output":  cmd_out,
+        "hint":            hint,
+        "ego_speed":       ego.get("speed", 0.0),
+        "ego_position":    ego.get("position", [0, 0]),
+        "lane":            ego.get("lane", "center"),
+        "road_condition":  env.get("road_condition", "normal"),
+        "traffic_signal":  env.get("traffic_signal", "none"),
+        "step":            step_index,
+        "max_steps":       getattr(observation, "max_steps", MAX_STEPS),
     }
     return (
-        f"STEP_INDEX: {step_index}\n"
-        f"SCENARIO_TYPE: {raw_obs['scenario_type']}\n"
-        f"OBSERVATION:\n{json.dumps(raw_obs, indent=2)}\n\n"
+        f"STEP={step_index} | STAGE={stage} | HAZARD_DIST={hazard_dist:.1f}m\n"
+        f">> {guidance}\n"
+        f"OBSERVATION:\n{json.dumps(obs_dict, indent=2)}\n\n"
         "Choose the safest next action. Return JSON only."
     )
 
@@ -127,13 +167,17 @@ def call_llm(client: OpenAI, observation: Any, step_index: int) -> Dict[str, Any
 
 
 def fallback_action(agent: ModularBaselineAgent, observation: Any) -> Dict[str, Any]:
-    payload = agent.act(
-        {
-            "sensor_data": getattr(observation, "sensor_data", {}) or {},
-            "ego_state": getattr(observation, "ego_state", {}) or {},
-            "environment": getattr(observation, "environment", {}) or {},
-        }
-    )
+    raw = {
+        "sensor_data":    getattr(observation, "sensor_data",    {}) or {},
+        "ego_state":      getattr(observation, "ego_state",      {}) or {},
+        "environment":    getattr(observation, "environment",    {}) or {},
+        "active_alerts":  getattr(observation, "active_alerts",  []) or [],
+        "hint":           getattr(observation, "hint",           "") or "",
+        "scenario_stage": getattr(observation, "scenario_stage", "") or "",
+        "hazard_distance":getattr(observation, "hazard_distance", 999.0),
+        "hazard_type":    getattr(observation, "hazard_type",    "") or "",
+    }
+    payload = agent.act(raw)
     return {"action": str(payload.get("action", "wait")), "value": float(payload.get("value", 0.0))}
 
 

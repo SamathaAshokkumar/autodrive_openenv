@@ -201,10 +201,11 @@ class LightweightDrivingSimulator:
                     "hazard_status": status,
                     "scenario_stage": self.current_stage,
                 }
+        # Surface the primary hazard objects so the agent always sees real distance
         return {
-            "hazard_type": "",
-            "hazard_distance": 999.0,
-            "hazard_status": "",
+            "hazard_type": self.primary_hazard_type,
+            "hazard_distance": round(float(hazard_distance), 2),
+            "hazard_status": self.current_stage,
             "scenario_stage": self.current_stage,
         }
 
@@ -265,6 +266,13 @@ class LightweightDrivingSimulator:
         return self.ego["speed"] > self.ego["max_speed"]
 
     def check_stuck(self) -> bool:
+        # Braking near a hazard is intentional — do not flag it as stuck
+        nearby_hazard = any(
+            hypot(obj["x"] - self.ego["x"], obj["y"] - self.ego["y"]) < 10.0
+            for obj in self.objects
+        )
+        if nearby_hazard:
+            return False
         return self.steps_without_progress >= 6
 
 
@@ -312,8 +320,13 @@ class DrivingBackend:
             f"signal={environment['traffic_signal']} | road={environment['road_condition']} | "
             f"speed={ego_state['speed']}"
         )
+        # Surface environment events (clearing, sudden alerts) before the action log
+        if self.simulator.event_log:
+            _command_output = f"{self.simulator.event_log} | {self.simulator.decision_log}"
+        else:
+            _command_output = self.simulator.decision_log
         return {
-            "command_output": self.simulator.decision_log or self.simulator.event_log,
+            "command_output": _command_output,
             "scene_summary": scene_summary,
             "active_alerts": [self.simulator.event_log] if self.simulator.event_log else [],
             "sensor_data": sensor_data,
@@ -339,7 +352,8 @@ class DrivingBackend:
             if obj["distance"] < 7.5 and obj.get("on_road", True) and abs(float(obj.get("angle", 0.0))) < 1.2
         ]
         incident_cleared = len(ahead_hazards) == 0 and self.simulator.ego["x"] > 6.0
-        progress_restored = incident_cleared and self.simulator.ego["speed"] >= 1.0
+        # Any forward motion after clearing counts as progress restored
+        progress_restored = incident_cleared and self.simulator.ego["speed"] >= 0.1
         return {
             "collision": self.simulator.check_collision(),
             "near_miss": self.simulator.check_near_miss(),

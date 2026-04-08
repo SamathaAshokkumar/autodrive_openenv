@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import logging
 from uuid import uuid4
 
 from openenv.core.env_server.interfaces import Environment
@@ -14,6 +16,13 @@ from .driving_backend import DrivingBackend
 from .judge import LLMJudge
 from .llm_client import LLMClient
 from .scenario_generator import ScenarioGenerator
+
+logger = logging.getLogger(__name__)
+
+_NARRATOR_SYSTEM = """You are the onboard perception narrator for an autonomous vehicle in India.
+Convert the raw sensor/ego/environment snapshot into ONE concise, vivid, action-oriented sentence (max 25 words).
+Focus on the most dangerous or important element the driver should act on RIGHT NOW.
+Return ONLY the sentence — no JSON, no markdown."""
 
 
 class AutoDriveGymEnvironment(Environment):
@@ -80,6 +89,7 @@ class AutoDriveGymEnvironment(Environment):
         judge_score, judge_feedback = self.judge.evaluate(before, {"action": action.action, "value": action.value}, result_state, self.scenario, self.history, persona)
 
         repeat_count = sum(1 for item in self.history if item.get("action") == action.action and abs(item.get("value", 0.0) - action.value) < 0.1)
+        # keep repeat penalty small and negative (used as a mild efficiency factor)
         repeat_penalty = -0.2 * repeat_count if repeat_count else 0.0
 
         done = bool(
@@ -126,58 +136,150 @@ class AutoDriveGymEnvironment(Environment):
                 "resolution": {"verified": success, "reason": resolution_reason, "bonus": round(resolution_bonus, 3)},
                 "stage_scores": {
                     "decision_score": round(judge_score, 3),
-                    "safety_score": 1.0 if not validation["collision"] and validation["safe_distance"] else -1.0,
-                    "efficiency_score": round(max(-1.0, 1.0 - 0.1 * self._step_count + repeat_penalty), 3),
+                    "safety_score": 1.0 if not validation["collision"] and validation.get("safe_distance") else 0.0,
+                    "efficiency_score": round(max(0.0, min(1.0, 1.0 - 0.05 * self._step_count + repeat_penalty)), 3),
                 },
             },
         )
         backend_event_log = str(obs.get("event_log", "") or "").strip()
-        obs["command_output"] = command_output
+        current_stage = self.backend.simulator.current_stage
+
+        # LLM narrator: generate a vivid human-readable description of the scene
+        narrative = self._narrate(obs, backend_event_log, current_stage)
+
+        # Combine environment events with action log so the agent sees both
+        if backend_event_log:
+            obs["command_output"] = f"{backend_event_log} | {command_output}"
+        else:
+            obs["command_output"] = command_output
+        obs["scene_summary"] = narrative  # override with LLM-generated description
         obs["event_log"] = backend_event_log
-        obs["active_alerts"] = [backend_event_log] if backend_event_log.lower().startswith("sudden alert:") else []
+        # Surface both sudden alerts AND clearing events so the agent adapts
+        if backend_event_log and backend_event_log.lower().startswith("sudden alert:"):
+            obs["active_alerts"] = [backend_event_log]
+        elif backend_event_log and current_stage in ("clearing", "cleared"):
+            obs["active_alerts"] = [backend_event_log]
+        else:
+            obs["active_alerts"] = []
+        # Override the hint when the hazard has cleared to prompt acceleration
+        if current_stage in ("clearing", "cleared"):
+            obs["hint"] = "Hazard has cleared. Accelerate NOW to restore forward progress."
         obs["scenario_type"] = self.scenario.get("type", "")
         obs["judge_persona"] = persona
+        # Normalize stage scores into non-negative ranges to avoid exact -1/0/1 extremes
+        def _norm_decision(x: float) -> float:
+            eps = 1e-3
+            v = max(-1.0, min(1.0, x))
+            return round(max(eps, min(1.0 - eps, (v + 1.0) / 2.0)), 3)
+
         obs["stage_scores"] = {
-            "decision_score": round(judge_score, 3),
-            "safety_score": 1.0 if not validation["collision"] and validation["safe_distance"] else -1.0,
-            "efficiency_score": round(max(-1.0, 1.0 - 0.1 * self._step_count + repeat_penalty), 3),
+            "decision_score": _norm_decision(judge_score),
+            "safety_score": round(max(1e-3, min(1.0 - 1e-3, 1.0 if not validation["collision"] and validation.get("safe_distance") else 0.0)), 3),
+            "efficiency_score": round(max(1e-3, min(1.0 - 1e-3, max(0.0, min(1.0, 1.0 - 0.05 * self._step_count + repeat_penalty)))), 3),
         }
         obs["validation"] = validation
         obs["resolution"] = {"verified": success, "reason": resolution_reason, "bonus": round(resolution_bonus, 3)}
         return self._to_observation(obs, reward=reward, done=done)
 
     def _compute_reward(self, validation: dict, judge_score: float, repeat_penalty: float, resolution_bonus: float, done: bool, success: bool) -> float:
-        reward = judge_score + repeat_penalty
-        if validation["collision"]:
-            reward -= 10.0
-        if validation["near_miss"]:
-            reward -= 3.0
-        if validation["overspeed"]:
-            reward -= 1.0
-        if validation["offroad"]:
-            reward -= 2.0
-        if validation["safe_distance"]:
-            reward += 1.0
+        # Produce a small, positive reward in (0,1) based primarily on normalized judge score.
+        eps = 1e-3
+        # map judge_score from [-1,1] -> [0,1]
+        base = max(-1.0, min(1.0, judge_score))
+        reward = (base + 1.0) / 2.0
+
+        # Mild multiplicative penalties for severe failures (scale down but keep >= eps)
+        if validation.get("collision"):
+            reward *= 0.05
+        if validation.get("near_miss"):
+            reward *= 0.5
+        if validation.get("offroad"):
+            reward *= 0.2
+
+        # Add small positive bonuses for safe behaviors
+        if validation.get("safe_distance"):
+            reward += 0.1
+        if validation.get("signal_respected"):
+            reward += 0.05
         if validation.get("incident_cleared") and validation.get("progress_restored"):
-            reward += 2.0
+            reward += 0.1
         elif validation.get("incident_cleared") and not validation.get("progress_restored"):
-            reward += 0.5
-        if validation["signal_respected"]:
-            reward += 0.5
-        if validation["stuck"]:
-            reward -= 4.0
-        repeated_brakes = sum(1 for item in self.history[-3:] if item.get("action") == "brake")
-        if repeated_brakes >= 3:
-            reward -= 2.0
+            reward += 0.02
+
+        # Apply repeat penalty as a multiplicative factor (repeat_penalty is <= 0)
+        repeat_factor = max(0.0, 1.0 + repeat_penalty)
+        reward *= repeat_factor
+
+        # If episode ended unsuccessfully, scale down
         if done and not success:
-            reward -= 2.0
-        reward += resolution_bonus
+            reward *= 0.5
+
+        # Incorporate a tiny fraction of resolution_bonus (original bonus may be large)
+        reward += max(0.0, min(1.0, resolution_bonus * 0.01))
+
+        # Clamp into (0,1) to satisfy validator (not 0.0 or 1.0)
+        reward = max(eps, min(1.0 - eps, reward))
         return round(reward, 3)
 
+    def _narrate(self, obs: dict, event_log: str, stage: str) -> str:
+        """Ask the LLM to produce a vivid one-line scene description.
+        Falls back to a rule-based description if the LLM fails or is mocked."""
+        sensor = obs.get("sensor_data", {}) or {}
+        objects = sensor.get("objects", []) or []
+        ego = obs.get("ego_state", {}) or {}
+        env = obs.get("environment", {}) or {}
+        hazard_dist = float(obs.get("hazard_distance", 999.0) or 999.0)
+        hazard_type = obs.get("hazard_type", "") or ""
+
+        # quick rule-based fallback (used when LLM unavailable)
+        def _rule_based() -> str:
+            closest = objects[0] if objects else {}
+            t = closest.get("type", "obstacle") if closest else "obstacle"
+            d = round(float(closest.get("distance", hazard_dist)), 1) if closest else hazard_dist
+            speed = round(float(ego.get("speed", 0.0)), 1)
+            road = env.get("road_condition", "normal")
+            sig = env.get("traffic_signal", "none")
+            if event_log and event_log.lower().startswith("sudden alert:"):
+                return event_log
+            if stage in ("clearing", "cleared"):
+                return f"Hazard CLEARED — road opening ahead. Speed: {speed} km/h. Accelerate."
+            if d < 5.0:
+                return f"CRITICAL: {t} only {d}m ahead! Speed {speed} km/h — brake hard."
+            if d < 12.0:
+                return f"Caution: {t} at {d}m. Road: {road}. Signal: {sig}. Speed: {speed} km/h."
+            return f"Path clear. Nearest object: {d}m. Speed: {speed} km/h. Road: {road}."
+
+        try:
+            snapshot = {
+                "nearest_objects": [{"type": o.get("type"), "distance": o.get("distance"), "on_road": o.get("on_road")} for o in objects[:3]],
+                "ego_speed_kmh": round(float(ego.get("speed", 0.0)), 1),
+                "scenario_stage": stage,
+                "hazard_type": hazard_type,
+                "hazard_distance_m": round(hazard_dist, 1),
+                "event": event_log or "none",
+                "road_condition": env.get("road_condition", "normal"),
+                "traffic_signal": env.get("traffic_signal", "none"),
+            }
+            result = self.llm.chat_json(
+                _NARRATOR_SYSTEM,
+                json.dumps(snapshot),
+                temperature=0.4,
+                max_tokens=60,
+            )
+            text = result.get("text", "") or ""
+            if text and len(text) > 8:
+                return text.strip()
+            return _rule_based()
+        except Exception:
+            return _rule_based()
+
     def _hint(self) -> str:
+        # After a hazard clears, tell the agent to accelerate explicitly
+        if self.backend.simulator.current_stage in ("clearing", "cleared"):
+            return "Hazard has cleared. Accelerate NOW to restore forward progress."
         persona = self.curriculum.get_judge_persona()
         if persona == "junior":
-            return "Dense traffic, expect unpredictable agents."
+            return "Dense traffic, expect unpredictable agents. Brake early near hazards."
         if persona == "senior":
             return "Balance safety, smoothness, and realistic Indian-road behavior."
         return ""

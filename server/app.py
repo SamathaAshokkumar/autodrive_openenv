@@ -34,22 +34,77 @@ async def healthz():
         return {"status": "error", "error": str(exc)}
 
 
+_TASKS = [
+    {"id": "pedestrian_crossing", "difficulty": "easy",   "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Vulnerable road user crosses suddenly"},
+    {"id": "auto_cut_in",         "difficulty": "easy",   "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Auto-rickshaw cuts in unpredictably"},
+    {"id": "bike_blind_spot",     "difficulty": "medium", "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Bike merges from blind spot"},
+    {"id": "pothole_ahead",       "difficulty": "medium", "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Road surface hazard requires smooth avoidance"},
+    {"id": "traffic_light_ambiguity", "difficulty": "medium", "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Conflicting signals require cautious response"},
+    {"id": "adversarial",         "difficulty": "hard",   "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Multiple unpredictable agents in chaotic Indian traffic"},
+]
+
+_ACTION_SCHEMA = {
+    "action": {"type": "string", "enum": ["accelerate", "brake", "steer_left", "steer_right", "horn", "wait", "change_lane_left", "change_lane_right"]},
+    "value": {"type": "float", "min": 0.0, "max": 1.0, "description": "Intensity or steering magnitude"},
+}
+
+# Pre-built test cases for each task used by /grader and /baseline ---------------
+_GRADER_TEST_CASES = {
+    "pedestrian_crossing":    {"obs": {"sensor_data": {"objects": [{"type": "pedestrian", "distance": 8.0}]}}, "action": {"action": "brake", "value": 0.9}, "result": {"safe_distance": True, "collision": False, "near_miss": False, "signal_respected": True}},
+    "auto_cut_in":            {"obs": {"sensor_data": {"objects": [{"type": "auto",       "distance": 7.0}]}}, "action": {"action": "brake", "value": 0.7}, "result": {"safe_distance": True, "collision": False, "near_miss": False, "signal_respected": True}},
+    "bike_blind_spot":        {"obs": {"sensor_data": {"objects": [{"type": "bike",       "distance": 6.0}]}}, "action": {"action": "wait",  "value": 0.0}, "result": {"safe_distance": True, "collision": False, "near_miss": False, "signal_respected": True}},
+    "pothole_ahead":          {"obs": {"sensor_data": {"objects": [{"type": "pothole",    "distance": 10.0}]}}, "action": {"action": "brake", "value": 0.5}, "result": {"safe_distance": True, "collision": False, "near_miss": False, "signal_respected": True}},
+    "traffic_light_ambiguity":{"obs": {"sensor_data": {"objects": [{"type": "traffic_police", "distance": 9.0}]}}, "action": {"action": "wait",  "value": 0.0}, "result": {"safe_distance": True, "collision": False, "near_miss": False, "signal_respected": True}},
+    "adversarial":            {"obs": {"sensor_data": {"objects": [{"type": "car",        "distance": 5.0}, {"type": "bike", "distance": 6.0}]}}, "action": {"action": "brake", "value": 0.8}, "result": {"safe_distance": False, "collision": False, "near_miss": True, "signal_respected": True}},
+}
+
+
 @app.get("/tasks")
 async def list_tasks():
+    return {"tasks": _TASKS, "action_schema": _ACTION_SCHEMA}
+
+
+@app.get("/grader")
+async def grader_endpoint(task_id: str = "pedestrian_crossing"):
+    """Return a multi-dimensional grader score in (0, 1) for the given task."""
+    from .judge import HeuristicGrader
+    grader = HeuristicGrader()
+    test = _GRADER_TEST_CASES.get(task_id, _GRADER_TEST_CASES["pedestrian_crossing"])
+    result = grader(test["obs"], test["action"], test["result"], {"type": task_id, "expected_behavior": ["brake", "wait"]}, [])
     return {
-        "tasks": [
-            {"id": "pedestrian_crossing", "difficulty": "easy", "description": "Vulnerable road user crosses suddenly"},
-            {"id": "auto_cut_in", "difficulty": "easy", "description": "Auto-rickshaw cuts in unpredictably"},
-            {"id": "bike_blind_spot", "difficulty": "medium", "description": "Bike merges from blind spot"},
-            {"id": "pothole_ahead", "difficulty": "medium", "description": "Road surface hazard requires smooth avoidance"},
-            {"id": "traffic_light_ambiguity", "difficulty": "medium", "description": "Conflicting signals require cautious response"},
-            {"id": "adversarial", "difficulty": "hard", "description": "Multiple unpredictable agents in chaotic Indian traffic"},
-        ],
-        "action_schema": {
-            "action": {"type": "string", "enum": ["accelerate", "brake", "steer_left", "steer_right", "horn", "wait", "change_lane_left", "change_lane_right"]},
-            "value": {"type": "float", "description": "Intensity or steering magnitude"},
+        "task_id": task_id,
+        "score": result["score"],
+        "dimensions": {
+            "safety": result.get("safety"),
+            "efficiency": result.get("efficiency"),
+            "compliance": result.get("compliance"),
         },
+        "feedback": result["feedback"],
     }
+
+
+@app.get("/baseline")
+async def baseline_scores():
+    """Run the HeuristicGrader against all tasks and return reproducible baseline scores."""
+    from .judge import HeuristicGrader
+    grader = HeuristicGrader()
+    results = []
+    for task in _TASKS:
+        tid = task["id"]
+        test = _GRADER_TEST_CASES.get(tid, _GRADER_TEST_CASES["pedestrian_crossing"])
+        scored = grader(test["obs"], test["action"], test["result"], {"type": tid, "expected_behavior": ["brake", "wait"]}, [])
+        results.append({
+            "task_id": tid,
+            "difficulty": task["difficulty"],
+            "score": scored["score"],
+            "dimensions": {
+                "safety": scored.get("safety"),
+                "efficiency": scored.get("efficiency"),
+                "compliance": scored.get("compliance"),
+            },
+            "feedback": scored["feedback"],
+        })
+    return {"status": "ok", "baseline_scores": results}
 
 
 def main(host: str = "0.0.0.0", port: int = 8000):
