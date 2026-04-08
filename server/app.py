@@ -66,13 +66,14 @@ async def list_tasks():
 
 @app.get("/grader")
 async def grader_endpoint(task_id: str = "pedestrian_crossing"):
-    """Return a multi-dimensional grader score in (0, 1) for the given task."""
+    """Return a strict principal-judge score in (0.02, 0.98) for the given task."""
     from .judge import HeuristicGrader
-    grader = HeuristicGrader()
+    grader = HeuristicGrader(persona="principal")
     test = _GRADER_TEST_CASES.get(task_id, _GRADER_TEST_CASES["pedestrian_crossing"])
     result = grader(test["obs"], test["action"], test["result"], {"type": task_id, "expected_behavior": ["brake", "wait"]}, [])
     return {
         "task_id": task_id,
+        "persona": "principal",
         "score": result["score"],
         "dimensions": {
             "safety": result.get("safety"),
@@ -85,9 +86,12 @@ async def grader_endpoint(task_id: str = "pedestrian_crossing"):
 
 @app.get("/baseline")
 async def baseline_scores():
-    """Run the HeuristicGrader against all tasks and return reproducible baseline scores."""
+    """Run the strict principal-judge HeuristicGrader against all tasks.
+
+    All scores guaranteed in (0.02, 0.98).
+    """
     from .judge import HeuristicGrader
-    grader = HeuristicGrader()
+    grader = HeuristicGrader(persona="principal")
     results = []
     for task in _TASKS:
         tid = task["id"]
@@ -96,6 +100,7 @@ async def baseline_scores():
         results.append({
             "task_id": tid,
             "difficulty": task["difficulty"],
+            "persona": "principal",
             "score": scored["score"],
             "dimensions": {
                 "safety": scored.get("safety"),

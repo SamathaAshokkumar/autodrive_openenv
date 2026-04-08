@@ -187,28 +187,29 @@ def format_action(action_name: str, value: float) -> str:
     return f"{action_name}: {value:.2f}"
 
 
-def normalized_score(rewards: List[float], observation: Any, resolved: bool) -> float:
-    if resolved:
-        return 1.0
-    if observation is None:
-        return 0.0
+_SCORE_LO = 0.02
+_SCORE_HI = 0.98
 
-    stage_scores = getattr(observation, "stage_scores", {}) or {}
-    validation = getattr(observation, "validation", {}) or {}
+
+def normalized_score(rewards: List[float], observation: Any, resolved: bool) -> float:
+    """Return episode score strictly in (0.02, 0.98) — never 0.0, never 1.0."""
+    stage_scores = getattr(observation, "stage_scores", {}) or {} if observation else {}
+    validation = getattr(observation, "validation", {}) or {} if observation else {}
 
     decision = float(stage_scores.get("decision_score", 0.0))
     safety = float(stage_scores.get("safety_score", 0.0))
     efficiency = float(stage_scores.get("efficiency_score", 0.0))
 
-    decision_norm = max(0.0, min((decision + 1.0) / 2.0, 1.0))
-    safety_norm = max(0.0, min((safety + 1.0) / 2.0, 1.0))
-    efficiency_norm = max(0.0, min((efficiency + 1.0) / 2.0, 1.0))
+    # Normalise sub-scores from [-1,1] to [0,1]
+    decision_norm = (decision + 1.0) / 2.0
+    safety_norm = (safety + 1.0) / 2.0
+    efficiency_norm = (efficiency + 1.0) / 2.0
 
     if rewards:
         avg_reward = sum(rewards) / len(rewards)
-        reward_norm = max(0.0, min((avg_reward + 2.0) / 4.0, 1.0))
+        reward_norm = (avg_reward + 2.0) / 4.0
     else:
-        reward_norm = 0.0
+        reward_norm = 0.5  # neutral, not 0
 
     score = (
         0.35 * decision_norm
@@ -217,23 +218,27 @@ def normalized_score(rewards: List[float], observation: Any, resolved: bool) -> 
         + 0.10 * reward_norm
     )
 
-    if validation.get("stuck"):
-        score -= 0.35
+    # Multiplicative penalties (avoid large additive negatives)
     if validation.get("collision"):
-        score -= 0.60
-    if validation.get("near_miss"):
-        score -= 0.15
+        score *= 0.25
     if validation.get("offroad"):
-        score -= 0.20
+        score *= 0.55
+    if validation.get("near_miss"):
+        score *= 0.70
+    if validation.get("stuck"):
+        score *= 0.65
     if not validation.get("signal_respected", True):
-        score -= 0.20
+        score *= 0.70
 
+    # Resolution bonuses
+    if resolved:
+        score = max(score, 0.75)  # resolved always near the top, but not 1.0
     if validation.get("incident_cleared"):
-        score += 0.05
+        score += 0.04
     if validation.get("progress_restored"):
-        score += 0.05
+        score += 0.03
 
-    return max(0.0, min(score, 1.0))
+    return max(_SCORE_LO, min(_SCORE_HI, round(score, 4)))
 
 
 def main() -> int:
@@ -336,7 +341,7 @@ def main() -> int:
                 print("-" * 72)
                 print(f"Task: {task_brief or 'failed to initialize task'}")
                 print("[END]")
-                print(f"-> Judge verification: UNRESOLVED - {str(exc).replace(chr(10), ' ')[:200]} | score=0.00")
+                print(f"-> Judge verification: UNRESOLVED - {str(exc).replace(chr(10), ' ')[:200]} | score={_SCORE_LO:.4f}")
     finally:
         if env_ctx is not None:
             try:

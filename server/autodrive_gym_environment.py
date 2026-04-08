@@ -41,10 +41,10 @@ class AutoDriveGymEnvironment(Environment):
         self.max_steps = MAX_STEPS
         self._state = AutoDriveState(episode_id=str(uuid4()), step_count=0)
 
-    def reset(self) -> AutoDriveObservation:
+    def reset(self, task_id: str | None = None) -> AutoDriveObservation:
         self.backend.reset()
         difficulty = self.curriculum.get_difficulty()
-        incident_type = self.curriculum.pick_fault_type()
+        incident_type = task_id or self.curriculum.pick_fault_type()
         if incident_type == "adversarial":
             self.scenario = self.designer.design(self.curriculum.get_skill_profile(), difficulty)
         else:

@@ -110,12 +110,7 @@ class CurriculumController:
     # ── Persona ───────────────────────────────────────────────────────────────
 
     def get_judge_persona(self) -> str:
-        difficulty = self.get_difficulty()
-        if difficulty < 0.40:
-            return "junior"
-        if difficulty < 0.70:
-            return "senior"
-        return "principal"
+        return "principal"  # Always use the strict principal judge
 
     # ── Scenario selection ────────────────────────────────────────────────────
 
