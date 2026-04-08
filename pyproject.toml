@@ -33,5 +33,5 @@ server = "autodrive_env.server.app:main"
 
 [tool.setuptools]
 include-package-data = true
-packages = ["autodrive_env", "autodrive_env.server"]
-package-dir = { "autodrive_env" = ".", "autodrive_env.server" = "server" }
+packages = ["autodrive_env", "autodrive_env.server", "autodrive_env.tasks"]
+package-dir = { "autodrive_env" = ".", "autodrive_env.server" = "server", "autodrive_env.tasks" = "tasks" }

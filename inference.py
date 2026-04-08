@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hackathon inference runner with eval-style readable logs."""
+"""AutoDrive Gym inference runner with strict START/STEP/END logs."""
 
 from __future__ import annotations
 
@@ -14,46 +14,65 @@ from openai import OpenAI
 from autodrive_env import AutoDriveAction, AutoDriveClient
 from autodrive_env.agent_baseline import ModularBaselineAgent
 
-
 API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or "missing-token"
 BENCHMARK = os.getenv("AUTODRIVE_BENCHMARK", "autodrive_env")
-MAX_STEPS = int(os.getenv("AUTODRIVE_MAX_STEPS", "20"))
+MAX_STEPS = int(os.getenv("AUTODRIVE_MAX_STEPS", "15"))
+
+# Exactly three official graded tasks
+TASK_IDS = [
+    "pedestrian_crossing",
+    "bike_blind_spot",
+    "adversarial",
+]
+
+_SCORE_LO = 0.02
+_SCORE_HI = 0.98
 
 SYSTEM_PROMPT = """You are an autonomous driving agent operating in dense Indian road conditions.
 
-STAGE LOGIC (follow strictly):
-- scenario_stage="approaching" : A hazard is ahead. BRAKE or WAIT to stay safe.
-- scenario_stage="clearing"    : The hazard has passed. ACCELERATE gently to resume driving.
-- scenario_stage="cleared"     : Road is open. ACCELERATE and maintain forward progress.
+STAGE LOGIC:
+- scenario_stage="approaching": hazard ahead, prefer brake or wait
+- scenario_stage="clearing": hazard passing, gently accelerate
+- scenario_stage="cleared": road open, resume progress
 
 DECISION GUIDE:
-- hazard_distance < 5  : BRAKE immediately  (value 0.8-1.0)
-- hazard_distance 5-12 : WAIT or slow brake  (value 0.3-0.6)
-- hazard_distance > 12 OR stage=clearing/cleared : ACCELERATE (value 0.4-0.7)
+- hazard_distance < 5  : brake strongly
+- hazard_distance 5-12 : brake softly or wait
+- hazard_distance > 12 or stage in clearing/cleared : accelerate
 
-SUDDEN ALERTS (active_alerts):
-- ambulance / police_override : pull left or wait, create corridor
-- animal / pedestrian         : brake and wait until cleared
-- traffic_jam                 : brake, maintain distance, wait for gap
-- speed_breaker / pothole     : slow down, steer around smoothly
-
-Rules:
-- Never repeat the same action more than 3 times in a row unless the hazard is still blocking.
-- If hint says "accelerate", always choose accelerate.
-
-Return ONLY valid JSON — no explanation:
+Return ONLY valid JSON:
 {"action": "accelerate|brake|steer_left|steer_right|horn|wait|change_lane_left|change_lane_right", "value": <float 0.0-1.0>}
 """
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Hackathon inference runner for AutoDrive Gym")
+    parser = argparse.ArgumentParser(description="AutoDrive Gym inference runner")
     parser.add_argument("--base-url", default=os.environ.get("ENV_URL", "http://localhost:8000"))
-    parser.add_argument("--episodes", type=int, default=int(os.environ.get("AUTODRIVE_EPISODES", "1")))
+    parser.add_argument("--episodes", type=int, default=int(os.environ.get("AUTODRIVE_EPISODES", "3")))
     parser.add_argument("--max-turns", type=int, default=MAX_STEPS)
     return parser.parse_args()
+
+
+def log_start(task: str) -> None:
+    print(f"[START] task={task} env={BENCHMARK} model={MODEL_NAME}", flush=True)
+
+
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+    error_text = error if error else "null"
+    print(
+        f"[STEP] step={step} action={action} reward={reward:.4f} done={str(done).lower()} error={error_text}",
+        flush=True,
+    )
+
+
+def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+    rewards_text = ",".join(f"{reward:.4f}" for reward in rewards)
+    print(
+        f"[END] success={str(success).lower()} steps={steps} score={score:.4f} rewards={rewards_text}",
+        flush=True,
+    )
 
 
 def parse_json_response(text: str) -> Optional[Dict[str, Any]]:
@@ -67,10 +86,10 @@ def parse_json_response(text: str) -> Optional[Dict[str, Any]]:
     except Exception:
         pass
 
-    fence_match = re.search(r"```(?:json)?\s*(.*?)```", text, re.DOTALL)
-    if fence_match:
+    fence = re.search(r"```(?:json)?\s*(.*?)```", text, re.DOTALL)
+    if fence:
         try:
-            data = json.loads(fence_match.group(1).strip())
+            data = json.loads(fence.group(1).strip())
             if isinstance(data, dict):
                 return data
         except Exception:
@@ -98,63 +117,51 @@ def normalize_action(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return {"action": action, "value": max(0.0, min(1.0, value))}
 
 
-def build_prompt(observation: Any, step_index: int) -> str:
-    stage        = getattr(observation, "scenario_stage",  "") or "approaching"
-    hazard_dist  = float(getattr(observation, "hazard_distance", 999.0) or 999.0)
-    hazard_type  = getattr(observation, "hazard_type",     "") or ""
-    hazard_status= getattr(observation, "hazard_status",   "") or ""
-    alerts       = getattr(observation, "active_alerts",   []) or []
-    event_log    = getattr(observation, "event_log",        "") or ""
-    hint         = getattr(observation, "hint",             "") or ""
-    ego          = getattr(observation, "ego_state",        {}) or {}
-    env          = getattr(observation, "environment",      {}) or {}
-    cmd_out      = getattr(observation, "command_output",   "") or ""
+def build_prompt(observation: Any, step_index: int, task_id: str) -> str:
+    stage = getattr(observation, "scenario_stage", "") or "approaching"
+    hazard_dist = float(getattr(observation, "hazard_distance", 999.0) or 999.0)
+    hazard_type = getattr(observation, "hazard_type", "") or task_id
+    alerts = getattr(observation, "active_alerts", []) or []
+    hint = getattr(observation, "hint", "") or ""
 
-    # Derive plain-English guidance so even a modest LLM understands what to do
-    if hint and ("accelerate" in hint.lower() or stage in ("clearing", "cleared")):
-        guidance = f"CLEARED — {hint or 'Hazard gone. ACCELERATE now.'}"
+    if hint and "accelerate" in hint.lower():
+        guidance = "Road is clear. Accelerate."
+    elif stage in ("clearing", "cleared"):
+        guidance = "Hazard is clearing. Resume safe forward progress."
     elif hazard_dist < 5.0:
-        guidance = f"DANGER — {hazard_type or 'hazard'} only {hazard_dist:.1f}m away. BRAKE immediately."
+        guidance = f"DANGER: {hazard_type} at {hazard_dist:.1f}m. Brake immediately."
     elif hazard_dist <= 12.0:
-        guidance = f"CAUTION — {hazard_type or 'hazard'} at {hazard_dist:.1f}m. WAIT or slow brake."
+        guidance = f"CAUTION: {hazard_type} at {hazard_dist:.1f}m. Brake or wait."
     else:
-        guidance = "PATH CLEAR — maintain or ACCELERATE."
+        guidance = "Path mostly clear. Accelerate smoothly."
 
-    obs_dict = {
-        "guidance":        guidance,
-        "scenario_stage":  stage,
-        "hazard_type":     hazard_type,
-        "hazard_distance": round(hazard_dist, 1),
-        "hazard_status":   hazard_status,
-        "event_log":       event_log,
-        "active_alerts":   alerts,
-        "command_output":  cmd_out,
-        "hint":            hint,
-        "ego_speed":       ego.get("speed", 0.0),
-        "ego_position":    ego.get("position", [0, 0]),
-        "lane":            ego.get("lane", "center"),
-        "road_condition":  env.get("road_condition", "normal"),
-        "traffic_signal":  env.get("traffic_signal", "none"),
-        "step":            step_index,
-        "max_steps":       getattr(observation, "max_steps", MAX_STEPS),
+    payload = {
+        "task_id": task_id,
+        "step_index": step_index,
+        "scenario_stage": stage,
+        "hazard_distance": round(hazard_dist, 2),
+        "hazard_type": hazard_type,
+        "active_alerts": alerts,
+        "hint": hint,
+        "command_output": getattr(observation, "command_output", "") or "",
+        "scene_summary": getattr(observation, "scene_summary", "") or "",
+        "ego_state": getattr(observation, "ego_state", {}) or {},
+        "sensor_data": getattr(observation, "sensor_data", {}) or {},
+        "environment": getattr(observation, "environment", {}) or {},
+        "guidance": guidance,
     }
-    return (
-        f"STEP={step_index} | STAGE={stage} | HAZARD_DIST={hazard_dist:.1f}m\n"
-        f">> {guidance}\n"
-        f"OBSERVATION:\n{json.dumps(obs_dict, indent=2)}\n\n"
-        "Choose the safest next action. Return JSON only."
-    )
+    return json.dumps(payload, indent=2)
 
 
-def call_llm(client: OpenAI, observation: Any, step_index: int) -> Dict[str, Any]:
+def call_llm(client: OpenAI, observation: Any, step_index: int, task_id: str) -> Dict[str, Any]:
     completion = client.chat.completions.create(
         model=MODEL_NAME,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": build_prompt(observation, step_index)},
+            {"role": "user", "content": build_prompt(observation, step_index, task_id)},
         ],
         temperature=0.2,
-        max_tokens=128,
+        max_tokens=120,
     )
     content = completion.choices[0].message.content or ""
     parsed = parse_json_response(content)
@@ -167,83 +174,70 @@ def call_llm(client: OpenAI, observation: Any, step_index: int) -> Dict[str, Any
 
 
 def fallback_action(agent: ModularBaselineAgent, observation: Any) -> Dict[str, Any]:
-    raw = {
-        "sensor_data":    getattr(observation, "sensor_data",    {}) or {},
-        "ego_state":      getattr(observation, "ego_state",      {}) or {},
-        "environment":    getattr(observation, "environment",    {}) or {},
-        "active_alerts":  getattr(observation, "active_alerts",  []) or [],
-        "hint":           getattr(observation, "hint",           "") or "",
-        "scenario_stage": getattr(observation, "scenario_stage", "") or "",
-        "hazard_distance":getattr(observation, "hazard_distance", 999.0),
-        "hazard_type":    getattr(observation, "hazard_type",    "") or "",
+    payload = agent.act(
+        {
+            "sensor_data": getattr(observation, "sensor_data", {}) or {},
+            "ego_state": getattr(observation, "ego_state", {}) or {},
+            "environment": getattr(observation, "environment", {}) or {},
+            "active_alerts": getattr(observation, "active_alerts", []) or [],
+            "hint": getattr(observation, "hint", "") or "",
+            "scenario_stage": getattr(observation, "scenario_stage", "") or "",
+            "hazard_distance": getattr(observation, "hazard_distance", 999.0),
+            "hazard_type": getattr(observation, "hazard_type", "") or "",
+        }
+    )
+    return {
+        "action": str(payload.get("action", "wait")),
+        "value": float(payload.get("value", 0.0)),
     }
-    payload = agent.act(raw)
-    return {"action": str(payload.get("action", "wait")), "value": float(payload.get("value", 0.0))}
 
 
 def format_action(action_name: str, value: float) -> str:
     if action_name == "wait":
         return "wait"
-    return f"{action_name}: {value:.2f}"
+    return f"{action_name}({value:.2f})"
 
 
-_SCORE_LO = 0.02
-_SCORE_HI = 0.98
+def normalized_score(observation: Any, resolved: bool) -> float:
+    if observation is None:
+        return _SCORE_LO
 
-
-def normalized_score(rewards: List[float], observation: Any, resolved: bool) -> float:
-    """Return episode score strictly in (0.02, 0.98) — never 0.0, never 1.0."""
-    stage_scores = getattr(observation, "stage_scores", {}) or {} if observation else {}
-    validation = getattr(observation, "validation", {}) or {} if observation else {}
+    stage_scores = getattr(observation, "stage_scores", {}) or {}
+    validation = getattr(observation, "validation", {}) or {}
 
     decision = float(stage_scores.get("decision_score", 0.0))
     safety = float(stage_scores.get("safety_score", 0.0))
     efficiency = float(stage_scores.get("efficiency_score", 0.0))
 
-    # Normalise sub-scores from [-1,1] to [0,1]
-    decision_norm = (decision + 1.0) / 2.0
-    safety_norm = (safety + 1.0) / 2.0
-    efficiency_norm = (efficiency + 1.0) / 2.0
+    decision_norm = max(0.0, min((decision + 1.0) / 2.0, 1.0))
+    safety_norm = max(0.0, min((safety + 1.0) / 2.0, 1.0))
+    efficiency_norm = max(0.0, min((efficiency + 1.0) / 2.0, 1.0))
 
-    if rewards:
-        avg_reward = sum(rewards) / len(rewards)
-        reward_norm = (avg_reward + 2.0) / 4.0
-    else:
-        reward_norm = 0.5  # neutral, not 0
+    score = 0.40 * decision_norm + 0.40 * safety_norm + 0.20 * efficiency_norm
 
-    score = (
-        0.35 * decision_norm
-        + 0.35 * safety_norm
-        + 0.20 * efficiency_norm
-        + 0.10 * reward_norm
-    )
-
-    # Multiplicative penalties (avoid large additive negatives)
-    if validation.get("collision"):
-        score *= 0.25
-    if validation.get("offroad"):
-        score *= 0.55
-    if validation.get("near_miss"):
-        score *= 0.70
     if validation.get("stuck"):
-        score *= 0.65
+        score -= 0.30
+    if validation.get("collision"):
+        score -= 0.50
+    if validation.get("near_miss"):
+        score -= 0.10
+    if validation.get("offroad"):
+        score -= 0.15
     if not validation.get("signal_respected", True):
-        score *= 0.70
-
-    # Resolution bonuses
-    if resolved:
-        score = max(score, 0.75)  # resolved always near the top, but not 1.0
+        score -= 0.15
     if validation.get("incident_cleared"):
-        score += 0.04
+        score += 0.05
     if validation.get("progress_restored"):
-        score += 0.03
+        score += 0.05
 
-    return max(_SCORE_LO, min(_SCORE_HI, round(score, 4)))
+    if resolved:
+        score = max(score, 0.95)
+
+    return max(_SCORE_LO, min(_SCORE_HI, score))
 
 
 def main() -> int:
     args = parse_args()
-
     llm_client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     fallback = ModularBaselineAgent()
 
@@ -252,96 +246,55 @@ def main() -> int:
         env_ctx = AutoDriveClient(base_url=args.base_url).sync()
         env = env_ctx.__enter__()
 
-        for episode_index in range(1, args.episodes + 1):
+        for episode_index in range(args.episodes):
+            task_id = TASK_IDS[episode_index % len(TASK_IDS)]
             rewards: List[float] = []
-            resolved = False
-            final_reason = ""
-            scenario_type = "unknown"
-            judge_persona = "unknown"
-            task_brief = ""
+            success = False
+            steps_taken = 0
+            observation = None
+
+            log_start(task_id)
 
             try:
-                reset_result = env.reset()
+                reset_result = env.reset(task_id=task_id)
                 observation = reset_result.observation
-                scenario_type = getattr(observation, "scenario_type", "unknown")
-                judge_persona = getattr(observation, "judge_persona", "") or "unknown"
-                task_brief = getattr(observation, "command_output", "") or getattr(observation, "event_log", "")
-
-                print("[START]")
-                print(f"Episode {episode_index}: {scenario_type} ({judge_persona} judge)")
-                print("-" * 72)
-                print(f"Task: {task_brief}")
 
                 for step_index in range(1, args.max_turns + 1):
                     llm_error = None
                     try:
-                        action_dict = call_llm(llm_client, observation, step_index)
+                        action_dict = call_llm(llm_client, observation, step_index, task_id)
                     except Exception as exc:
                         llm_error = str(exc).replace("\n", " ")[:200]
                         action_dict = fallback_action(fallback, observation)
 
-                    action = AutoDriveAction(action=action_dict["action"], value=float(action_dict["value"]))
-
-                    try:
-                        step_result = env.step(action)
-                    except Exception as exc:
-                        llm_error = str(exc).replace("\n", " ")[:200]
-                        print(f"[STEP] Step {step_index}: {format_action(action.action, action.value):<24} reward={0.0:+.2f}  <- {llm_error}")
-                        break
-
+                    action = AutoDriveAction(
+                        action=action_dict["action"],
+                        value=float(action_dict["value"]),
+                    )
+                    step_result = env.step(action)
                     observation = step_result.observation
                     reward = float(step_result.reward or 0.0)
+                    done = bool(step_result.done)
                     rewards.append(reward)
-                    notes: List[str] = []
-                    validation = getattr(observation, "validation", {}) or {}
-                    if validation.get("stuck"):
-                        notes.append("resolution_gap:vehicle got stuck")
-                    if validation.get("near_miss"):
-                        notes.append("near_miss")
-                    if validation.get("collision"):
-                        notes.append("collision")
-                    if llm_error:
-                        notes.append(llm_error)
-                    notes_text = f"  <- {', '.join(notes)}" if notes else ""
+                    steps_taken = step_index
 
-                    print(
-                        f"[STEP] Step {step_index}: {format_action(action.action, action.value):<24} "
-                        f"reward={reward:+.2f}{notes_text}"
+                    log_step(
+                        step=step_index,
+                        action=format_action(action.action, action.value),
+                        reward=reward,
+                        done=done,
+                        error=llm_error,
                     )
 
-                    stage = getattr(observation, "scenario_stage", "") or "?"
-                    nearest = getattr(observation, "hazard_distance", None)
-                    if nearest in (None, ""):
-                        nearest = "?"
-                    source = "remote_llm" if llm_error is None else "fallback_agent"
-                    trace_extra = ""
-                    if llm_error:
-                        trace_extra = " | fallback after llm error"
-                    print(f"         trace: phase={stage} nearest={nearest} source={source}{trace_extra}")
-
-                    sudden_alerts = getattr(observation, "active_alerts", []) or []
-                    sudden_alert = next((str(item).strip() for item in sudden_alerts if str(item).strip()), "")
-                    if sudden_alert:
-                        print(f"         sudden alert: {sudden_alert.removeprefix('Sudden alert: ').strip()}")
-
-                    if bool(step_result.done):
+                    if done:
                         resolution = getattr(observation, "resolution", {}) or {}
-                        resolved = bool(resolution.get("verified"))
-                        final_reason = str(resolution.get("reason", "") or "")
+                        success = bool(resolution.get("verified"))
                         break
 
-                score = normalized_score(rewards, observation, resolved)
-                print("[END]")
-                verdict = "RESOLVED" if resolved else "UNRESOLVED"
-                suffix = f" - {final_reason}" if final_reason else ""
-                print(f"-> Judge verification: {verdict}{suffix} | score={score:.2f}")
-            except Exception as exc:
-                print("[START]")
-                print(f"Episode {episode_index}: {scenario_type} ({judge_persona} judge)")
-                print("-" * 72)
-                print(f"Task: {task_brief or 'failed to initialize task'}")
-                print("[END]")
-                print(f"-> Judge verification: UNRESOLVED - {str(exc).replace(chr(10), ' ')[:200]} | score={_SCORE_LO:.4f}")
+                score = normalized_score(observation, success)
+                log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+            except Exception:
+                log_end(success=False, steps=steps_taken, score=_SCORE_LO, rewards=rewards)
     finally:
         if env_ctx is not None:
             try:

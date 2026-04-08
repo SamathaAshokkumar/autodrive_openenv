@@ -9,16 +9,27 @@ tags:
   - openenv
   - driving
   - autonomous-vehicles
+
 tasks:
   - id: pedestrian_crossing
     difficulty: easy
-    description: "Vulnerable road user crosses suddenly in Indian traffic"
-    grader: "autodrive_env.server.grader:HeuristicGrader"
+    description: "Pedestrian or vulnerable road user crosses suddenly — agent must brake safely"
+    ideal_action: brake
+    steps: 5
+
   - id: auto_cut_in
     difficulty: easy
-    description: "Auto-rickshaw cuts in unpredictably from the left"
-    grader: "autodrive_env.server.grader:HeuristicGrader"
+    description: "Auto-rickshaw cuts into the lane unpredictably — agent must slow and yield"
+    ideal_action: brake
+    steps: 5
+
   - id: bike_blind_spot
     difficulty: medium
-    description: "Bike merges from blind spot requiring defensive braking"
-    grader: "autodrive_env.server.grader:HeuristicGrader"
+    description: "Bike merges from blind spot — agent must wait or brake defensively"
+    ideal_action: wait
+    steps: 5
+
+scoring:
+  reward_range: [0.02, 0.98]
+  success_threshold: 0.5
+  score_formula: mean(step_rewards)
