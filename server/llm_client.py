@@ -8,7 +8,10 @@ import os
 import re
 from typing import Any, Dict
 
-from huggingface_hub import InferenceClient
+try:
+    from huggingface_hub import InferenceClient
+except Exception:  # pragma: no cover - optional dependency path
+    InferenceClient = None
 
 logger = logging.getLogger(__name__)
 

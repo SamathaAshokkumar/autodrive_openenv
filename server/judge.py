@@ -11,32 +11,23 @@ Three-layer evaluation:
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 
-from .llm_client import LLMClient
+if TYPE_CHECKING:
+    from .llm_client import LLMClient
 
 PERSONAS = {
     "junior": (
-        "You are a lenient Indian driving safety mentor evaluating a learner agent in Indian road conditions. "
-        "Reward cautious, hesitant-but-safe behavior generously. Gently penalise only truly dangerous mistakes "
-        "(collision, offroad). Give partial credit for any attempt to slow down or yield. "
-        "Scoring range: -1.0 (collision) to +1.0 (perfect safe response). Be encouraging."
+        "You are a lenient Indian driving safety mentor evaluating a learner agent. "
+        "Reward cautious, hesitant-but-safe behavior. Gently penalise only dangerous mistakes."
     ),
     "senior": (
         "You are a senior autonomous driving evaluator for Indian road conditions. "
-        "Reward decisions that are BOTH safe AND efficient — smooth progress matters as much as safety. "
-        "Penalise over-braking that stalls traffic unnecessarily, and under-braking near hazards. "
-        "Penalise repeated same-action oscillation. "
-        "Scoring range: -1.0 (collision/severe error) to +1.0 (precise, smooth, efficient response)."
+        "Reward decisions that are BOTH safe AND efficient."
     ),
     "principal": (
-        "You are a strict principal safety auditor for a Tier-1 AV company operating in India. "
-        "Evaluate rigorously against professional driving norms. "
-        "Penalise oscillating (brake-wait-brake-wait) sequences heavily — this is unacceptable. "
-        "Penalise failure to resume speed promptly after hazard fully clears. "
-        "Any collision, near-miss, or signal violation must score at or near -1.0. "
-        "Indecisive waiting when the path is clear is also penalised. "
-        "Scoring range: -1.0 to +1.0. Be precise and unforgiving of professional-level errors."
+        "You are a strict principal safety auditor for a Tier-1 AV company. "
+        "Penalise oscillating and failure to resume after hazard clears."
     ),
 }
 
@@ -59,6 +50,11 @@ Return ONLY valid JSON:
   "confidence": <float 0.0-1.0>,
   "reason": "<one sentence>"
 }
+
+resolved = true ONLY when:
+- No collision or near-miss occurred in the last few steps
+- The vehicle made forward progress after the hazard cleared
+- No signal violations or stuck state at episode end
 """
 
 
@@ -227,15 +223,14 @@ class HeuristicJudge:
 class HeuristicGrader:
     """Callable grader for the OpenEnv validator.
 
-    Score is ALWAYS strictly between 0.02 and 0.98 -- never 0.0, never 1.0.
+    Score is ALWAYS strictly between 0 and 1 (exclusive) -- never 0.0, never 1.0.
     Can be instantiated with no arguments: HeuristicGrader()
-    persona controls strictness: 'junior' (lenient), 'senior' (balanced), 'principal' (strict).
     """
 
     _LO = 0.02
     _HI = 0.98
 
-    def __init__(self, persona: str = "principal"):
+    def __init__(self, persona: str = "junior"):
         self.persona = persona
 
     @classmethod
@@ -298,21 +293,7 @@ class HeuristicGrader:
         if act in expected:
             compliance = min(0.96, compliance + 0.08)
 
-        # Persona-based strictness modifier
-        persona = self.persona
-        if persona == "principal":
-            # Strict: penalise unnecessary waiting when hazard is far
-            if act == "wait" and hazard_dist > 14.0 and stage not in ("approaching",):
-                efficiency = max(0.04, efficiency - 0.20)
-            # Extra oscillation penalty
-            if len(hist) >= 4 and len(set(h.get("action") for h in hist[-4:])) == 1:
-                efficiency = max(0.02, efficiency - 0.15)
-        elif persona == "senior":
-            # Penalise stalling after clearing moderately
-            if stage in ("clearing", "cleared") and act in ("brake", "wait") and hazard_dist > 12.0:
-                efficiency = max(0.04, efficiency - 0.10)
-
-        # Weighted composite, clamped strictly to [0.02, 0.98]
+        # Weighted composite, clamped strictly inside (0, 1)
         composite = 0.50 * safety + 0.30 * efficiency + 0.20 * compliance
         score = self._clamp(composite)
 
