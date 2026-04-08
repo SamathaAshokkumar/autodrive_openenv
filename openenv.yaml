@@ -12,25 +12,13 @@ tags:
 tasks:
   - id: pedestrian_crossing
     difficulty: easy
-    description: "Vulnerable road user crosses suddenly"
-    grader: "autodrive_env.server.judge:HeuristicGrader"
+    description: "Vulnerable road user crosses suddenly in Indian traffic"
+    grader: "autodrive_env.server.grader:HeuristicGrader"
   - id: auto_cut_in
     difficulty: easy
-    description: "Auto-rickshaw cuts in unpredictably"
-    grader: "autodrive_env.server.judge:HeuristicGrader"
+    description: "Auto-rickshaw cuts in unpredictably from the left"
+    grader: "autodrive_env.server.grader:HeuristicGrader"
   - id: bike_blind_spot
     difficulty: medium
-    description: "Bike merges from blind spot"
-    grader: "autodrive_env.server.judge:HeuristicGrader"
-  - id: pothole_ahead
-    difficulty: medium
-    description: "Road surface hazard requires smooth avoidance"
-    grader: "autodrive_env.server.judge:HeuristicGrader"
-  - id: traffic_light_ambiguity
-    difficulty: medium
-    description: "Conflicting signals require cautious response"
-    grader: "autodrive_env.server.judge:HeuristicGrader"
-  - id: adversarial
-    difficulty: hard
-    description: "Multiple unpredictable agents in chaotic Indian traffic"
-    grader: "autodrive_env.server.judge:HeuristicGrader"
+    description: "Bike merges from blind spot requiring defensive braking"
+    grader: "autodrive_env.server.grader:HeuristicGrader"

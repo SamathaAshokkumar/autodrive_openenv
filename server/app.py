@@ -36,10 +36,7 @@ async def healthz():
 
 _TASKS = [
     {"id": "pedestrian_crossing", "difficulty": "easy",   "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Vulnerable road user crosses suddenly"},
-    {"id": "auto_cut_in",         "difficulty": "easy",   "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Auto-rickshaw cuts in unpredictably"},
     {"id": "bike_blind_spot",     "difficulty": "medium", "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Bike merges from blind spot"},
-    {"id": "pothole_ahead",       "difficulty": "medium", "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Road surface hazard requires smooth avoidance"},
-    {"id": "traffic_light_ambiguity", "difficulty": "medium", "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Conflicting signals require cautious response"},
     {"id": "adversarial",         "difficulty": "hard",   "grader": "autodrive_env.server.judge:HeuristicGrader", "description": "Multiple unpredictable agents in chaotic Indian traffic"},
 ]
 
@@ -51,10 +48,7 @@ _ACTION_SCHEMA = {
 # Pre-built test cases for each task used by /grader and /baseline ---------------
 _GRADER_TEST_CASES = {
     "pedestrian_crossing":    {"obs": {"sensor_data": {"objects": [{"type": "pedestrian", "distance": 8.0}]}}, "action": {"action": "brake", "value": 0.9}, "result": {"safe_distance": True, "collision": False, "near_miss": False, "signal_respected": True}},
-    "auto_cut_in":            {"obs": {"sensor_data": {"objects": [{"type": "auto",       "distance": 7.0}]}}, "action": {"action": "brake", "value": 0.7}, "result": {"safe_distance": True, "collision": False, "near_miss": False, "signal_respected": True}},
     "bike_blind_spot":        {"obs": {"sensor_data": {"objects": [{"type": "bike",       "distance": 6.0}]}}, "action": {"action": "wait",  "value": 0.0}, "result": {"safe_distance": True, "collision": False, "near_miss": False, "signal_respected": True}},
-    "pothole_ahead":          {"obs": {"sensor_data": {"objects": [{"type": "pothole",    "distance": 10.0}]}}, "action": {"action": "brake", "value": 0.5}, "result": {"safe_distance": True, "collision": False, "near_miss": False, "signal_respected": True}},
-    "traffic_light_ambiguity":{"obs": {"sensor_data": {"objects": [{"type": "traffic_police", "distance": 9.0}]}}, "action": {"action": "wait",  "value": 0.0}, "result": {"safe_distance": True, "collision": False, "near_miss": False, "signal_respected": True}},
     "adversarial":            {"obs": {"sensor_data": {"objects": [{"type": "car",        "distance": 5.0}, {"type": "bike", "distance": 6.0}]}}, "action": {"action": "brake", "value": 0.8}, "result": {"safe_distance": False, "collision": False, "near_miss": True, "signal_respected": True}},
 }
 
