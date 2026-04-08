@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hackathon-compliant inference entrypoint for AutoDrive Gym."""
+"""Hackathon inference runner with eval-style readable logs."""
 
 from __future__ import annotations
 
@@ -19,7 +19,6 @@ API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or "missing-token"
 BENCHMARK = os.getenv("AUTODRIVE_BENCHMARK", "autodrive_env")
-TASK_NAME = os.getenv("AUTODRIVE_TASK", "autodrive")
 MAX_STEPS = int(os.getenv("AUTODRIVE_MAX_STEPS", "20"))
 
 SYSTEM_PROMPT = """You are an autonomous driving agent for Indian road conditions.
@@ -43,26 +42,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--episodes", type=int, default=int(os.environ.get("AUTODRIVE_EPISODES", "1")))
     parser.add_argument("--max-turns", type=int, default=MAX_STEPS)
     return parser.parse_args()
-
-
-def log_start(task: str, env: str, model: str) -> None:
-    print(f"[START] task={task} env={env} model={model}", flush=True)
-
-
-def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
-    error_val = error if error else "null"
-    print(
-        f"[STEP] step={step} action={action} reward={reward:.2f} done={str(done).lower()} error={error_val}",
-        flush=True,
-    )
-
-
-def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
-    rewards_str = ",".join(f"{reward:.2f}" for reward in rewards)
-    print(
-        f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}",
-        flush=True,
-    )
 
 
 def parse_json_response(text: str) -> Optional[Dict[str, Any]]:
@@ -104,8 +83,7 @@ def normalize_action(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         value = float(payload.get("value", 0.0))
     except Exception:
         value = 0.0
-    value = max(0.0, min(1.0, value))
-    return {"action": action, "value": value}
+    return {"action": action, "value": max(0.0, min(1.0, value))}
 
 
 def build_prompt(observation: Any, step_index: int) -> str:
@@ -159,15 +137,59 @@ def fallback_action(agent: ModularBaselineAgent, observation: Any) -> Dict[str, 
     return {"action": str(payload.get("action", "wait")), "value": float(payload.get("value", 0.0))}
 
 
-def score_from_result(rewards: List[float], observation: Any) -> float:
-    resolution = getattr(observation, "resolution", {}) or {}
-    if resolution.get("verified"):
+def format_action(action_name: str, value: float) -> str:
+    if action_name == "wait":
+        return "wait"
+    return f"{action_name}: {value:.2f}"
+
+
+def normalized_score(rewards: List[float], observation: Any, resolved: bool) -> float:
+    if resolved:
         return 1.0
-    if not rewards:
+    if observation is None:
         return 0.0
-    reward_sum = sum(rewards)
-    reward_cap = max(len(rewards) * 10.0, 1.0)
-    return max(0.0, min(reward_sum / reward_cap, 1.0))
+
+    stage_scores = getattr(observation, "stage_scores", {}) or {}
+    validation = getattr(observation, "validation", {}) or {}
+
+    decision = float(stage_scores.get("decision_score", 0.0))
+    safety = float(stage_scores.get("safety_score", 0.0))
+    efficiency = float(stage_scores.get("efficiency_score", 0.0))
+
+    decision_norm = max(0.0, min((decision + 1.0) / 2.0, 1.0))
+    safety_norm = max(0.0, min((safety + 1.0) / 2.0, 1.0))
+    efficiency_norm = max(0.0, min((efficiency + 1.0) / 2.0, 1.0))
+
+    if rewards:
+        avg_reward = sum(rewards) / len(rewards)
+        reward_norm = max(0.0, min((avg_reward + 2.0) / 4.0, 1.0))
+    else:
+        reward_norm = 0.0
+
+    score = (
+        0.35 * decision_norm
+        + 0.35 * safety_norm
+        + 0.20 * efficiency_norm
+        + 0.10 * reward_norm
+    )
+
+    if validation.get("stuck"):
+        score -= 0.35
+    if validation.get("collision"):
+        score -= 0.60
+    if validation.get("near_miss"):
+        score -= 0.15
+    if validation.get("offroad"):
+        score -= 0.20
+    if not validation.get("signal_respected", True):
+        score -= 0.20
+
+    if validation.get("incident_cleared"):
+        score += 0.05
+    if validation.get("progress_restored"):
+        score += 0.05
+
+    return max(0.0, min(score, 1.0))
 
 
 def main() -> int:
@@ -175,35 +197,38 @@ def main() -> int:
 
     llm_client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     fallback = ModularBaselineAgent()
-    env_ctx = None
-    env = None
 
+    env_ctx = None
     try:
         env_ctx = AutoDriveClient(base_url=args.base_url).sync()
         env = env_ctx.__enter__()
-        for _episode in range(1, args.episodes + 1):
+
+        for episode_index in range(1, args.episodes + 1):
             rewards: List[float] = []
-            steps_taken = 0
-            score = 0.0
-            success = False
-            observation = None
-            reset_result = None
+            resolved = False
+            final_reason = ""
+            scenario_type = "unknown"
+            judge_persona = "unknown"
+            task_brief = ""
 
             try:
                 reset_result = env.reset()
                 observation = reset_result.observation
-                task_name = getattr(observation, "scenario_type", "") or TASK_NAME
-                log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
+                scenario_type = getattr(observation, "scenario_type", "unknown")
+                judge_persona = getattr(observation, "judge_persona", "") or "unknown"
+                task_brief = getattr(observation, "command_output", "") or getattr(observation, "event_log", "")
 
-                for step in range(1, args.max_turns + 1):
-                    if getattr(reset_result, "done", False):
-                        break
+                print("[START]")
+                print(f"Episode {episode_index}: {scenario_type} ({judge_persona} judge)")
+                print("-" * 72)
+                print(f"Task: {task_brief}")
 
-                    error_msg = None
+                for step_index in range(1, args.max_turns + 1):
+                    llm_error = None
                     try:
-                        action_dict = call_llm(llm_client, observation, step)
+                        action_dict = call_llm(llm_client, observation, step_index)
                     except Exception as exc:
-                        error_msg = str(exc).replace("\n", " ")[:200]
+                        llm_error = str(exc).replace("\n", " ")[:200]
                         action_dict = fallback_action(fallback, observation)
 
                     action = AutoDriveAction(action=action_dict["action"], value=float(action_dict["value"]))
@@ -211,41 +236,63 @@ def main() -> int:
                     try:
                         step_result = env.step(action)
                     except Exception as exc:
-                        error_msg = str(exc).replace("\n", " ")[:200]
-                        log_step(step=step, action=action.action, reward=0.0, done=True, error=error_msg)
-                        steps_taken = step
+                        llm_error = str(exc).replace("\n", " ")[:200]
+                        print(f"[STEP] Step {step_index}: {format_action(action.action, action.value):<24} reward={0.0:+.2f}  <- {llm_error}")
                         break
 
                     observation = step_result.observation
                     reward = float(step_result.reward or 0.0)
-                    done = bool(step_result.done)
                     rewards.append(reward)
-                    steps_taken = step
+                    notes: List[str] = []
+                    validation = getattr(observation, "validation", {}) or {}
+                    if validation.get("stuck"):
+                        notes.append("resolution_gap:vehicle got stuck")
+                    if validation.get("near_miss"):
+                        notes.append("near_miss")
+                    if validation.get("collision"):
+                        notes.append("collision")
+                    if llm_error:
+                        notes.append(llm_error)
+                    notes_text = f"  <- {', '.join(notes)}" if notes else ""
 
-                    action_str = action.action
-                    if action.value:
-                        action_str = f"{action.action}({action.value:.2f})"
-                    log_step(step=step, action=action_str, reward=reward, done=done, error=error_msg)
+                    print(
+                        f"[STEP] Step {step_index}: {format_action(action.action, action.value):<24} "
+                        f"reward={reward:+.2f}{notes_text}"
+                    )
 
-                    if done:
+                    stage = getattr(observation, "scenario_stage", "") or "?"
+                    nearest = getattr(observation, "hazard_distance", None)
+                    if nearest in (None, ""):
+                        nearest = "?"
+                    source = "remote_llm" if llm_error is None else "fallback_agent"
+                    trace_extra = ""
+                    if llm_error:
+                        trace_extra = " | fallback after llm error"
+                    print(f"         trace: phase={stage} nearest={nearest} source={source}{trace_extra}")
+
+                    sudden_alerts = getattr(observation, "active_alerts", []) or []
+                    sudden_alert = next((str(item).strip() for item in sudden_alerts if str(item).strip()), "")
+                    if sudden_alert:
+                        print(f"         sudden alert: {sudden_alert.removeprefix('Sudden alert: ').strip()}")
+
+                    if bool(step_result.done):
+                        resolution = getattr(observation, "resolution", {}) or {}
+                        resolved = bool(resolution.get("verified"))
+                        final_reason = str(resolution.get("reason", "") or "")
                         break
 
-                try:
-                    state = env.state()
-                    score = score_from_result(rewards, observation) if observation is not None else 0.0
-                    resolution = getattr(observation, "resolution", {}) if observation is not None else {}
-                    success = bool(resolution.get("verified")) or score >= 0.5
-                    if getattr(state, "is_resolved", False):
-                        success = True
-                        score = max(score, 1.0)
-                except Exception:
-                    score = max(0.0, min(sum(rewards) / max(len(rewards) * 10.0, 1.0), 1.0)) if rewards else 0.0
-                    success = score >= 0.5
-            except Exception:
-                success = False
-                score = 0.0
-            finally:
-                log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+                score = normalized_score(rewards, observation, resolved)
+                print("[END]")
+                verdict = "RESOLVED" if resolved else "UNRESOLVED"
+                suffix = f" - {final_reason}" if final_reason else ""
+                print(f"-> Judge verification: {verdict}{suffix} | score={score:.2f}")
+            except Exception as exc:
+                print("[START]")
+                print(f"Episode {episode_index}: {scenario_type} ({judge_persona} judge)")
+                print("-" * 72)
+                print(f"Task: {task_brief or 'failed to initialize task'}")
+                print("[END]")
+                print(f"-> Judge verification: UNRESOLVED - {str(exc).replace(chr(10), ' ')[:200]} | score=0.00")
     finally:
         if env_ctx is not None:
             try:
