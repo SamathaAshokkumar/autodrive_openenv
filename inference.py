@@ -40,6 +40,7 @@ Return ONLY JSON:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Hackathon inference runner for AutoDrive Gym")
     parser.add_argument("--base-url", default=os.environ.get("ENV_URL", "http://localhost:8000"))
+    parser.add_argument("--episodes", type=int, default=int(os.environ.get("AUTODRIVE_EPISODES", "1")))
     parser.add_argument("--max-turns", type=int, default=MAX_STEPS)
     return parser.parse_args()
 
@@ -59,7 +60,7 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{reward:.2f}" for reward in rewards)
     print(
-        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}",
         flush=True,
     )
 
@@ -174,81 +175,83 @@ def main() -> int:
 
     llm_client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     fallback = ModularBaselineAgent()
-
-    rewards: List[float] = []
-    steps_taken = 0
-    score = 0.0
-    success = False
     env_ctx = None
     env = None
-
-    log_start(task=TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
 
     try:
         env_ctx = AutoDriveClient(base_url=args.base_url).sync()
         env = env_ctx.__enter__()
-
-        reset_result = env.reset()
-        observation = reset_result.observation
-
-        for step in range(1, args.max_turns + 1):
-            if getattr(reset_result, "done", False):
-                break
-
-            error_msg = None
-            try:
-                action_dict = call_llm(llm_client, observation, step)
-            except Exception as exc:
-                error_msg = str(exc).replace("\n", " ")[:200]
-                action_dict = fallback_action(fallback, observation)
-
-            action = AutoDriveAction(action=action_dict["action"], value=float(action_dict["value"]))
+        for _episode in range(1, args.episodes + 1):
+            rewards: List[float] = []
+            steps_taken = 0
+            score = 0.0
+            success = False
+            observation = None
+            reset_result = None
 
             try:
-                step_result = env.step(action)
-            except Exception as exc:
-                error_msg = str(exc).replace("\n", " ")[:200]
-                log_step(step=step, action=action.action, reward=0.0, done=True, error=error_msg)
-                steps_taken = step
-                break
+                reset_result = env.reset()
+                observation = reset_result.observation
+                task_name = getattr(observation, "scenario_type", "") or TASK_NAME
+                log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
 
-            observation = step_result.observation
-            reward = float(step_result.reward or 0.0)
-            done = bool(step_result.done)
-            rewards.append(reward)
-            steps_taken = step
+                for step in range(1, args.max_turns + 1):
+                    if getattr(reset_result, "done", False):
+                        break
 
-            action_str = action.action
-            if action.value:
-                action_str = f"{action.action}:{action.value:.2f}"
-            log_step(step=step, action=action_str, reward=reward, done=done, error=error_msg)
+                    error_msg = None
+                    try:
+                        action_dict = call_llm(llm_client, observation, step)
+                    except Exception as exc:
+                        error_msg = str(exc).replace("\n", " ")[:200]
+                        action_dict = fallback_action(fallback, observation)
 
-            if done:
-                break
+                    action = AutoDriveAction(action=action_dict["action"], value=float(action_dict["value"]))
 
-        if env is not None:
-            try:
-                state = env.state()
-                last_observation = observation if "observation" in locals() else None
-                score = score_from_result(rewards, last_observation) if last_observation is not None else 0.0
-                resolution = getattr(last_observation, "resolution", {}) if last_observation is not None else {}
-                success = bool(resolution.get("verified")) or score >= 0.5
-                if getattr(state, "is_resolved", False):
-                    success = True
-                    score = max(score, 1.0)
+                    try:
+                        step_result = env.step(action)
+                    except Exception as exc:
+                        error_msg = str(exc).replace("\n", " ")[:200]
+                        log_step(step=step, action=action.action, reward=0.0, done=True, error=error_msg)
+                        steps_taken = step
+                        break
+
+                    observation = step_result.observation
+                    reward = float(step_result.reward or 0.0)
+                    done = bool(step_result.done)
+                    rewards.append(reward)
+                    steps_taken = step
+
+                    action_str = action.action
+                    if action.value:
+                        action_str = f"{action.action}({action.value:.2f})"
+                    log_step(step=step, action=action_str, reward=reward, done=done, error=error_msg)
+
+                    if done:
+                        break
+
+                try:
+                    state = env.state()
+                    score = score_from_result(rewards, observation) if observation is not None else 0.0
+                    resolution = getattr(observation, "resolution", {}) if observation is not None else {}
+                    success = bool(resolution.get("verified")) or score >= 0.5
+                    if getattr(state, "is_resolved", False):
+                        success = True
+                        score = max(score, 1.0)
+                except Exception:
+                    score = max(0.0, min(sum(rewards) / max(len(rewards) * 10.0, 1.0), 1.0)) if rewards else 0.0
+                    success = score >= 0.5
             except Exception:
-                score = max(0.0, min(sum(rewards) / max(len(rewards) * 10.0, 1.0), 1.0)) if rewards else 0.0
-                success = score >= 0.5
-    except Exception:
-        success = False
-        score = 0.0
+                success = False
+                score = 0.0
+            finally:
+                log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
     finally:
         if env_ctx is not None:
             try:
                 env_ctx.__exit__(None, None, None)
             except Exception:
                 pass
-        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
     return 0
 
