@@ -75,4 +75,3 @@ scoring:
   reward_range: [0.02, 0.98]
   success_threshold: 0.5
   score_formula: mean(step_rewards)
-a
