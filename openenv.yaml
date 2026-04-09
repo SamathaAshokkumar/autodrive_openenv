@@ -15,21 +15,64 @@ tasks:
     difficulty: easy
     description: "Pedestrian or vulnerable road user crosses suddenly — agent must brake safely"
     ideal_action: brake
-    steps: 5
+    steps: 6
 
   - id: auto_cut_in
     difficulty: easy
     description: "Auto-rickshaw cuts into the lane unpredictably — agent must slow and yield"
     ideal_action: brake
-    steps: 5
+    steps: 6
 
   - id: bike_blind_spot
     difficulty: medium
-    description: "Bike merges from blind spot — agent must wait or brake defensively"
+    description: "Bike merges from blind spot — agent must wait or steer defensively"
     ideal_action: wait
-    steps: 5
+    steps: 6
+
+  - id: pothole_ahead
+    difficulty: medium
+    description: "Deep pothole in lane — agent should brake then steer around it"
+    ideal_action: steer_left
+    steps: 6
+
+  - id: speed_breaker
+    difficulty: easy
+    description: "Unmarked speed breaker — agent must reduce speed before hitting the ridge"
+    ideal_action: brake
+    steps: 6
+
+  - id: traffic_light_ambiguity
+    difficulty: medium
+    description: "Conflicting signals and police override — agent must wait for hand-signal clearance"
+    ideal_action: wait
+    steps: 6
+
+  - id: animal_crossing
+    difficulty: medium
+    description: "Cow or dog wanders onto road — agent must brake, horn, then yield"
+    ideal_action: horn
+    steps: 6
+
+  - id: ambulance_approach
+    difficulty: medium
+    description: "Ambulance approaching from behind — agent must steer left to create corridor"
+    ideal_action: steer_left
+    steps: 6
+
+  - id: traffic_jam
+    difficulty: medium
+    description: "Sudden stop-and-go traffic jam — agent must queue and wait patiently"
+    ideal_action: wait
+    steps: 8
+
+  - id: adversarial
+    difficulty: hard
+    description: "Multi-agent chaos: simultaneous threats from auto, bike, pedestrian, and stalled car"
+    ideal_action: brake
+    steps: 8
 
 scoring:
   reward_range: [0.02, 0.98]
   success_threshold: 0.5
   score_formula: mean(step_rewards)
+a
