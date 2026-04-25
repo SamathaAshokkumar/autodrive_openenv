@@ -1,12 +1,12 @@
 
 
 ---
-title: autodrive
+title: AutoDrive GRPO
+emoji: 🚗
 colorFrom: blue
 colorTo: green
 sdk: docker
 app_port: 8000
-pinned: false
 ---
 
 # AutoDrive Gym — Autonomous Driving in Indian Road Conditions
