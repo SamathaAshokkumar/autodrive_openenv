@@ -1,0 +1,67 @@
+_wandb:
+    value:
+        cli_version: 0.26.1
+        e:
+            6ayzs8gyehqv5851h3s5sklvpwmwrvsq:
+                args:
+                    - --episodes
+                    - "40"
+                    - --mode
+                    - adaptive
+                    - --task
+                    - pedestrian_crossing
+                    - --wandb
+                cpu_count: 4
+                cpu_count_logical: 8
+                cudaVersion: "13.0"
+                disk:
+                    /:
+                        total: "1002504712192"
+                        used: "667803856896"
+                email: samatha45102@gmail.com
+                executable: C:\Users\samatha\anaconda3\envs\openenv\python.exe
+                gpu: NVIDIA GeForce MX450
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Turing
+                      cudaCores: 896
+                      memoryTotal: "2147483648"
+                      name: NVIDIA GeForce MX450
+                      uuid: GPU-ed0f9a85-ffa2-24bf-8397-3814b245f3e5
+                host: DESKTOP-DB8B2O1
+                memory:
+                    total: "16905961472"
+                os: Windows-10-10.0.26200-SP0
+                program: -m autodrive_env.train
+                python: CPython 3.10.20
+                root: C:\Users\samatha\OneDrive\Documents\greenops-openenv\autodrive_env
+                startedAt: "2026-04-25T07:44:57.312740Z"
+                writerId: 6ayzs8gyehqv5851h3s5sklvpwmwrvsq
+        m: []
+        python_version: 3.10.20
+        t:
+            "1":
+                - 49
+                - 95
+                - 105
+            "2":
+                - 49
+                - 95
+                - 105
+            "3":
+                - 2
+                - 13
+                - 16
+                - 61
+            "4": 3.10.20
+            "5": 0.26.1
+            "8":
+                - 3
+            "12": 0.26.1
+            "13": windows-amd64
+episodes:
+    value: 40
+mode:
+    value: adaptive
+task:
+    value: pedestrian_crossing

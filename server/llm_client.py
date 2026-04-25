@@ -1,4 +1,32 @@
-"""Unified LLM client for AutoDrive Gym."""
+"""Unified LLM client for AutoDrive Gym.
+
+Modelled after the kube-sre-gym winner approach:
+three clean backends selected by a single env var, no silent mock fallback.
+
+Config (set ONE of these):
+  LLM_BACKEND=hf         → HuggingFace Inference API  (use your HF credits)
+  LLM_BACKEND=groq       → Groq API                   (fast, free tier)
+  LLM_BACKEND=openai     → OpenAI-compatible endpoint  (vLLM / OpenAI)
+
+HF backend env vars:
+  HF_TOKEN               — your HuggingFace token (hf_xxx)
+  LLM_MODEL              — model ID  (default: Qwen/Qwen2.5-72B-Instruct)
+
+Groq backend env vars:
+  GROQ_API_KEY           — your Groq API key
+  LLM_MODEL              — model name (default: llama-3.1-8b-instant)
+
+OpenAI backend env vars:
+  OPENAI_API_KEY         — API key  (or any string for local vLLM)
+  LLM_BASE_URL           — base URL (default: https://api.openai.com/v1)
+  LLM_MODEL              — model name (default: gpt-4o-mini)
+
+Auto-detection order (when LLM_BACKEND is not set):
+  1. GROQ_API_KEY present  → groq
+  2. HF_TOKEN present      → hf
+  3. OPENAI_API_KEY present → openai
+  4. none                  → mock (limited built-in responses, training still runs)
+"""
 
 from __future__ import annotations
 
@@ -6,207 +34,128 @@ import json
 import logging
 import os
 import re
+import time
 from typing import Any, Dict
-
-try:
-    from huggingface_hub import InferenceClient
-except Exception:  # pragma: no cover - optional dependency path
-    InferenceClient = None
 
 logger = logging.getLogger(__name__)
 
-try:
-    from openai import OpenAI
-except Exception:  # pragma: no cover - optional dependency path
-    OpenAI = None
 
-try:
-    from groq import Groq
-except Exception:  # pragma: no cover - optional dependency path
-    Groq = None
+# ── helpers ───────────────────────────────────────────────────────────────────
 
+def _parse_json(text: str) -> Dict[str, Any]:
+    """Extract JSON from LLM response, handling markdown code fences."""
+    text = text.strip()
+    # Try direct parse first
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+    # Strip ```json ... ``` wrappers
+    fence = re.search(r"```(?:json)?\s*\n?(.*?)```", text, re.DOTALL)
+    if fence:
+        try:
+            return json.loads(fence.group(1).strip())
+        except Exception:
+            pass
+    # Last resort: find first {...} block
+    try:
+        start = text.index("{")
+        end   = text.rindex("}")
+        return json.loads(text[start : end + 1])
+    except Exception:
+        return {"text": text}
+
+
+def _mock_response(system_prompt: str, user_prompt: str) -> Dict[str, Any]:
+    """Minimal deterministic fallback when no LLM backend is available."""
+    combined = (system_prompt + user_prompt).lower()
+    if "score" in combined or "grade" in combined:
+        return {"score": 0.5, "feedback": "no llm backend configured"}
+    if "action" in combined or "decide" in combined:
+        return {"action": "wait", "value": 0.0, "reasoning": "no llm backend"}
+    if "intent" in combined:
+        return {"dominant_scene_intent": "unknown", "agents": []}
+    if "negotiation" in combined or "negotiate" in combined:
+        return {"outcome": "defer", "priority": "unknown"}
+    return {"score": 0.0, "feedback": "no llm backend configured"}
+
+
+# ── main client ───────────────────────────────────────────────────────────────
 
 class LLMClient:
-    """Provider-aware JSON-oriented client.
+    """Provider-aware JSON-oriented LLM client.
 
-    Supported providers:
-    - `openai`
-    - `groq`
-    - `hf`
-    - fallback mock response when no provider is configured or available
+    Usage::
+
+        llm = LLMClient()
+        result = llm.chat_json(system_prompt, user_prompt, temperature=0.2)
     """
 
-    def __init__(self, provider: str | None = None, api_key: str | None = None):
-        backend = os.environ.get("LLM_BACKEND")
-        explicit_provider = os.environ.get("LLM_PROVIDER")
-        normalized_provider = provider or explicit_provider or backend
-        self.provider = (
-            normalized_provider
-            or ("openai" if os.environ.get("OPENAI_API_KEY") else None)
-            or ("groq" if os.environ.get("GROQ_API_KEY") else None)
-            or ("hf" if (
+    def __init__(self):
+        # ── backend selection ──────────────────────────────────────────────
+        explicit = os.environ.get("LLM_BACKEND", "").lower()
+        if explicit:
+            self.backend = explicit
+        elif os.environ.get("GROQ_API_KEY"):
+            self.backend = "groq"
+        elif os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_API_KEY"):
+            self.backend = "hf"
+        elif os.environ.get("OPENAI_API_KEY"):
+            self.backend = "openai"
+        else:
+            self.backend = "mock"
+
+        # ── model selection ────────────────────────────────────────────────
+        _defaults = {
+            "hf":     "Qwen/Qwen2.5-72B-Instruct",
+            "groq":   "llama-3.1-8b-instant",
+            "openai": "gpt-4o-mini",
+            "mock":   "mock",
+        }
+        self.model = (
+            os.environ.get("LLM_MODEL")
+            or os.environ.get("HF_MODEL")     # legacy
+            or os.environ.get("MODEL_ID")      # legacy
+            or os.environ.get("GROQ_MODEL")   # legacy
+            or _defaults.get(self.backend, "mock")
+        )
+
+        self._client = None
+
+        if self.backend == "hf":
+            from huggingface_hub import InferenceClient
+            token = (
                 os.environ.get("HF_TOKEN")
                 or os.environ.get("HUGGINGFACE_API_KEY")
                 or os.environ.get("HUGGINGFACEHUB_API_TOKEN")
-            ) else None)
-            or "mock"
-        ).lower()
-
-        self.api_key = api_key or os.environ.get("LLM_API_KEY")
-
-        self.openai_key = os.environ.get("OPENAI_API_KEY") or self.api_key
-        self.openai_model = (
-            os.environ.get("OPENAI_MODEL")
-            or os.environ.get("LLM_MODEL")
-            or "gpt-4o-mini"
-        )
-        self.openai_base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("LLM_BASE_URL")
-
-        self.groq_key = os.environ.get("GROQ_API_KEY") or self.api_key
-        self.groq_model = (
-            os.environ.get("GROQ_MODEL")
-            or os.environ.get("LLM_MODEL")
-            or "llama-3.1-8b-instant"
-        )
-
-        self.hf_key = (
-            os.environ.get("HF_TOKEN")
-            or os.environ.get("HUGGINGFACE_API_KEY")
-            or os.environ.get("HUGGINGFACEHUB_API_TOKEN")
-        )
-        self.hf_model = (
-            os.environ.get("HF_MODEL")
-            or os.environ.get("MODEL_ID")
-            or os.environ.get("HUGGINGFACE_MODEL")
-            or os.environ.get("LLM_MODEL")
-            or "Qwen/Qwen3-0.6B"
-        )
-        self.hf_provider = (
-            os.environ.get("HF_PROVIDER")
-            or os.environ.get("HUGGINGFACE_PROVIDER")
-            or "auto"
-        )
-
-        self._disabled_reason = ""
-        self._openai_client = None
-        self._groq_client = None
-        self._hf_client = None
-        self._provider_disabled = False
-
-        if self.provider == "openai" and self.openai_key and OpenAI is not None:
-            self._openai_client = OpenAI(
-                api_key=self.openai_key,
-                base_url=self.openai_base_url,
             )
-            logger.info("LLM provider: openai (%s)", self.openai_model)
-        elif self.provider == "groq" and self.groq_key and Groq is not None:
-            self._groq_client = Groq(api_key=self.groq_key)
-            logger.info("LLM provider: groq (%s)", self.groq_model)
-        elif self.provider == "hf" and self.hf_key:
-            self._hf_client = InferenceClient(
-                model=self.hf_model,
-                provider=self.hf_provider,
-                api_key=self.hf_key,
-                timeout=30,
+            # kube-style: use `token=` not `api_key=` (older hub versions need this)
+            self._client = InferenceClient(token=token)
+            logger.info("LLM backend: HuggingFace Inference API  model=%s", self.model)
+
+        elif self.backend == "groq":
+            from groq import Groq
+            self._client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+            logger.info("LLM backend: Groq  model=%s", self.model)
+
+        elif self.backend == "openai":
+            from openai import OpenAI
+            self._client = OpenAI(
+                base_url=os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1"),
+                api_key=os.environ.get("OPENAI_API_KEY", "local"),
             )
-            logger.info("LLM provider: hf (%s via %s)", self.hf_model, self.hf_provider)
+            logger.info("LLM backend: OpenAI-compatible  model=%s  base=%s",
+                        self.model, os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1"))
+
         else:
-            if self.provider == "openai" and OpenAI is None:
-                self._disabled_reason = "openai package is not installed"
-            elif self.provider == "groq" and Groq is None:
-                self._disabled_reason = "groq package is not installed"
-            elif self.provider == "hf" and not self.hf_key:
-                self._disabled_reason = "HF token is not configured"
-            else:
-                self._disabled_reason = "no remote provider configured"
-            logger.info("LLM provider: mock (%s)", self._disabled_reason)
-            self.provider = "mock"
-
-    @staticmethod
-    def _parse_json_from_text(text: str) -> Dict[str, Any]:
-        text = text.strip()
-        try:
-            return json.loads(text)
-        except Exception:
-            pass
-
-        fence_match = re.search(r"```(?:json)?\s*\n?(.*?)```", text, re.DOTALL)
-        if fence_match:
-            fenced = fence_match.group(1).strip()
-            try:
-                return json.loads(fenced)
-            except Exception:
-                pass
-
-        try:
-            start = text.index("{")
-            end = text.rindex("}")
-            return json.loads(text[start : end + 1])
-        except Exception:
-            return {"text": text}
-
-    def _chat_openai(self, system_prompt: str, user_prompt: str, temperature: float, max_tokens: int) -> Dict[str, Any]:
-        completion = self._openai_client.chat.completions.create(
-            model=self.openai_model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-        text = completion.choices[0].message.content or ""
-        return self._parse_json_from_text(text)
-
-    def _chat_groq(self, system_prompt: str, user_prompt: str, temperature: float, max_tokens: int) -> Dict[str, Any]:
-        completion = self._groq_client.chat.completions.create(
-            model=self.groq_model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-        text = completion.choices[0].message.content or ""
-        return self._parse_json_from_text(text)
-
-    def _chat_hf(self, system_prompt: str, user_prompt: str, temperature: float, max_tokens: int) -> Dict[str, Any]:
-        try:
-            completion = self._hf_client.chat_completion(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                model=self.hf_model,
-                max_tokens=max_tokens,
-                temperature=temperature,
+            logger.warning(
+                "LLM backend: mock  (set LLM_BACKEND + credentials to enable real LLM calls)\n"
+                "  For HF credits:  set LLM_BACKEND=hf   HF_TOKEN=hf_xxx\n"
+                "  For Groq (free): set LLM_BACKEND=groq GROQ_API_KEY=gsk_xxx\n"
+                "  Then re-run with --mode pipeline"
             )
-            text = completion.choices[0].message.content or ""
-            return self._parse_json_from_text(text)
-        except Exception as chat_exc:
-            logger.info(
-                "HF chat_completion unavailable for model '%s' via provider '%s'; "
-                "trying text_generation fallback. Error: %s",
-                self.hf_model,
-                self.hf_provider,
-                chat_exc,
-            )
-            text = self._hf_client.text_generation(
-                prompt=f"{system_prompt}\n{user_prompt}",
-                model=self.hf_model,
-                max_new_tokens=max_tokens,
-                temperature=temperature,
-                return_full_text=False,
-            )
-            if not isinstance(text, str):
-                text = str(text)
-            return self._parse_json_from_text(text)
 
-    def _disable_provider(self, reason: str) -> None:
-        self._provider_disabled = True
-        self._disabled_reason = reason
-        logger.warning(reason)
+    # ── public API ────────────────────────────────────────────────────────────
 
     def chat_json(
         self,
@@ -215,57 +164,93 @@ class LLMClient:
         temperature: float = 0.3,
         max_tokens: int = 256,
     ) -> Dict[str, Any]:
-        if self._provider_disabled:
-            logger.debug("Mock LLM fallback: %s", self._disabled_reason)
-            if "score" in user_prompt.lower():
-                return {"score": 0.0, "feedback": "mocked neutral"}
-            if "return json" in user_prompt.lower():
-                return {"action": "wait", "value": 0.0}
-            return {"score": 0.0, "feedback": "mock response"}
-
+        """Call LLM and return parsed JSON dict.  Falls back to mock on error."""
+        if self.backend == "mock" or self._client is None:
+            return _mock_response(system_prompt, user_prompt)
         try:
-            if self.provider == "openai" and self._openai_client is not None:
-                return self._chat_openai(system_prompt, user_prompt, temperature, max_tokens)
-            if self.provider == "groq" and self._groq_client is not None:
-                return self._chat_groq(system_prompt, user_prompt, temperature, max_tokens)
-            if self.provider == "hf" and self._hf_client is not None:
-                return self._chat_hf(system_prompt, user_prompt, temperature, max_tokens)
+            text = self._chat(system_prompt, user_prompt, temperature, max_tokens)
+            return _parse_json(text)
         except Exception as exc:
-            error_text = str(exc)
-            fatal_markers = [
-                "insufficient_quota",
-                "exceeded your current quota",
-                "incorrect api key",
-                "invalid api key",
-                "model_not_supported",
-                "authentication",
-                "401",
-                "403",
-                "404",
-                "410",
-            ]
-            if any(marker in error_text.lower() for marker in fatal_markers):
-                self._disable_provider(
-                    f"Provider '{self.provider}' is unavailable for the configured model or account. "
-                    f"Falling back to the built-in baseline agent. Error: {error_text}"
+            logger.warning("LLM call failed (%s). Using mock response. Error: %s",
+                           self.backend, exc)
+            return _mock_response(system_prompt, user_prompt)
+
+    # ── internal dispatch ─────────────────────────────────────────────────────
+
+    def _chat(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float,
+        max_tokens: int,
+    ) -> str:
+        if self.backend == "hf":
+            return self._chat_hf(system_prompt, user_prompt, temperature, max_tokens)
+        if self.backend == "groq":
+            return self._chat_groq(system_prompt, user_prompt, temperature, max_tokens)
+        return self._chat_openai(system_prompt, user_prompt, temperature, max_tokens)
+
+    def _chat_hf(self, system: str, user: str, temperature: float, max_tokens: int) -> str:
+        # HF InferenceClient.chat_completion — kube-style, with retry
+        for attempt in range(3):
+            try:
+                resp = self._client.chat_completion(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user",   "content": user},
+                    ],
+                    temperature=temperature,
+                    max_tokens=max_tokens,
                 )
-            else:
-                logger.warning(
-                    "Provider '%s' failed for the configured model. Falling back to built-in baseline behavior. Error: %s",
-                    self.provider,
-                    exc,
+                return resp.choices[0].message.content or ""
+            except Exception as exc:
+                err = str(exc).lower()
+                # Non-retriable errors
+                if any(x in err for x in ("401", "403", "404", "model not found",
+                                           "quota", "billing", "unauthorized")):
+                    raise
+                if attempt < 2:
+                    wait = 2 ** attempt
+                    logger.warning("HF transient error (attempt %d/3), retrying in %ds: %s",
+                                   attempt + 1, wait, exc)
+                    time.sleep(wait)
+                else:
+                    raise
+
+    def _chat_groq(self, system: str, user: str, temperature: float, max_tokens: int) -> str:
+        for attempt in range(3):
+            try:
+                resp = self._client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user",   "content": user},
+                    ],
+                    temperature=temperature,
+                    max_tokens=max_tokens,
                 )
+                return resp.choices[0].message.content or ""
+            except Exception as exc:
+                err = str(exc).lower()
+                if any(x in err for x in ("401", "403", "invalid_api_key", "quota")):
+                    raise
+                if attempt < 2:
+                    wait = 2 ** attempt
+                    logger.warning("Groq transient error (attempt %d/3), retrying in %ds: %s",
+                                   attempt + 1, wait, exc)
+                    time.sleep(wait)
+                else:
+                    raise
 
-        if self._disabled_reason:
-            logger.debug("Mock LLM fallback: %s", self._disabled_reason)
-        else:
-            logger.debug("Mock LLM fallback: no provider response available.")
-
-        if "score" in user_prompt.lower():
-            return {"score": 0.0, "feedback": "mocked neutral"}
-        if "return json" in user_prompt.lower():
-            return {"action": "wait", "value": 0.0}
-        return {"score": 0.0, "feedback": "mock response"}
-
-
-__all__ = ["LLMClient"]
+    def _chat_openai(self, system: str, user: str, temperature: float, max_tokens: int) -> str:
+        resp = self._client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user",   "content": user},
+            ],
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        return resp.choices[0].message.content or ""

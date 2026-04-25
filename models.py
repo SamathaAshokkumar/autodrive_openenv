@@ -21,6 +21,7 @@ class AutoDriveObservation(Observation):
     active_alerts: List[str] = Field(default_factory=list)
     sensor_data: Dict[str, Any] = Field(default_factory=dict)
     ego_state: Dict[str, Any] = Field(default_factory=dict)
+    road_geometry: Dict[str, Any] = Field(default_factory=dict)
     environment: Dict[str, Any] = Field(default_factory=dict)
     vehicle_profile: Dict[str, Any] = Field(default_factory=dict)
     event_log: str = ""
@@ -39,6 +40,22 @@ class AutoDriveObservation(Observation):
     done: bool = False
     reward: float | None = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    # Theme 1: multi-agent pipeline trace (Perception→Context→IntentInference→Negotiation→Decision→Oversight)
+    pipeline_trace: Dict[str, Any] = Field(default_factory=dict)
+    # Theme 1: fleet context (other vehicle positions, shared alerts, oversight notes)
+    fleet_context: Dict[str, Any] = Field(default_factory=dict)
+    # Theme 2: long-horizon route state (checkpoint progress, remaining checkpoints)
+    route_state: Dict[str, Any] = Field(default_factory=dict)
+    # Theme 4: self-improvement context (weak spots targeted, trigger count)
+    self_improve_context: Dict[str, Any] = Field(default_factory=dict)
+    # Theme 1 + 3.1: inferred actor intent map (from IntentInferenceAgent)
+    intent_context: Dict[str, Any] = Field(default_factory=dict)
+    # Theme 1: negotiation plan and outcome (from NegotiationAgent)
+    negotiation_context: Dict[str, Any] = Field(default_factory=dict)
+    # Theme 3.1: indirect zone signals (nearby_places, signs, cues — NOT explicit zone label)
+    zone_cues: Dict[str, Any] = Field(default_factory=dict)
+    # Theme 3.2: Bayesian Theory-of-Mind belief state (per-actor intent distributions)
+    belief_state: Dict[str, Any] = Field(default_factory=dict)
 
 
 class AutoDriveState(State):
@@ -69,6 +86,10 @@ class ScenarioSpec:
     alert_message: str = ""
     correct_fix_description: str = ""
     expected_behavior: List[str] = field(default_factory=list)
+    dynamic_events: List[Dict[str, Any]] = field(default_factory=list)
+    # Theme 3.1: indirect zone signals — nearby POIs, signs, ambient cues
+    # These are NEVER a direct zone label; agent must infer appropriate behavior
+    zone_cues: Dict[str, Any] = field(default_factory=dict)
     dynamic_events: List[Dict[str, Any]] = field(default_factory=list)
 
 

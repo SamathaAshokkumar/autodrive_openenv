@@ -16,6 +16,7 @@ from copy import deepcopy
 import random
 
 from .constants import DEFAULT_SCENE_ENV, DEFAULT_VEHICLE_PROFILE
+from .zone_api import build_zone_cues
 from ..models import ScenarioSpec
 
 
@@ -356,6 +357,369 @@ SCENARIO_POOL = [
             {"trigger_step": 8, "kind": "move_actor_ahead", "message": "Stalled car being towed. Lane opening."},
         ],
     ),
+
+    # ── ZONE-INFERENCE SCENARIOS (Theme 3.1 — World Modeling) ─────────────────
+    # Key design: zone_cues give INDIRECT SIGNALS only.
+    # No "zone_type" label is ever given to the agent — it must INFER behavior.
+
+    ScenarioSpec(
+        name="hospital_zone_slow_and_quiet",
+        type="hospital_zone_inference",
+        difficulty=0.35,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal", "visibility": "clear"},
+        actors=[
+            {"type": "pedestrian", "x": 14, "y": 1.0, "vx": -0.3, "behavior": "sudden_cross", "lane": "left"},
+        ],
+        root_cause=(
+            "The vehicle enters a zone near a hospital. No zone label is given. "
+            "The agent must infer appropriate behavior from nearby POIs and ambient cues."
+        ),
+        alert_message="ALERT: vulnerable pedestrian crossing ahead in slow-moving area",
+        correct_fix_description=(
+            "Slow down, avoid horn use, yield to pedestrian — the agent must infer "
+            "from nearby_places=['hospital'] and visible_signs that this is a sensitive zone."
+        ),
+        expected_behavior=["brake", "wait"],
+        zone_cues=build_zone_cues("hospital_zone"),
+        dynamic_events=[
+            {"trigger_step": 4, "kind": "clear_crossing", "message": "Pedestrian has crossed. Narrow corridor ahead."},
+            {"trigger_step": 6, "kind": "spawn_vehicle", "message": "Sudden alert: ambulance exiting hospital — yield immediately.",
+             "actor": {"type": "ambulance", "x": 5, "y": -1.0, "vx": 2.0, "behavior": "emergency_pass", "lane": "right"}},
+        ],
+    ),
+    ScenarioSpec(
+        name="school_zone_children_crossing",
+        type="school_zone_inference",
+        difficulty=0.38,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal", "visibility": "clear"},
+        actors=[
+            {"type": "pedestrian", "x": 11, "y": 1.2, "vx": -0.7, "behavior": "sudden_cross", "lane": "left"},
+            {"type": "pedestrian", "x": 13, "y": -1.0, "vx": -0.5, "behavior": "sudden_cross", "lane": "right"},
+        ],
+        root_cause=(
+            "Two children dart across the road. The agent sees nearby_places=['school', 'playground'] "
+            "in zone_cues and must infer it must slow to school-zone speed without being told."
+        ),
+        alert_message="ALERT: multiple pedestrians crossing — dense zone ahead",
+        correct_fix_description=(
+            "Brake immediately and wait. Must NOT use horn (school zone etiquette). "
+            "Agent infers school zone from POI signals, not direct label."
+        ),
+        expected_behavior=["brake", "wait"],
+        zone_cues=build_zone_cues("school_zone"),
+        dynamic_events=[
+            {"trigger_step": 5, "kind": "clear_crossing", "message": "Children have crossed. Road opening ahead."},
+        ],
+    ),
+    ScenarioSpec(
+        name="temple_zone_procession",
+        type="temple_zone_inference",
+        difficulty=0.45,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal", "lane_status": "missing", "visibility": "clear"},
+        actors=[
+            {"type": "pedestrian", "x": 10, "y": 0.8, "vx": -0.3, "behavior": "sudden_cross", "lane": "center"},
+            {"type": "pedestrian", "x": 12, "y": -0.5, "vx": -0.2, "behavior": "sudden_cross", "lane": "center"},
+            {"type": "auto",       "x": 16, "y": -1.2, "vx": 0.0,  "behavior": "static",       "lane": "left"},
+        ],
+        root_cause=(
+            "A religious procession partially blocks the road near a temple. "
+            "Agent sees nearby_places=['temple'] and visible_signs=['Silence Zone', 'No Horn']. "
+            "It must not honk even when path is blocked — infer from signals."
+        ),
+        alert_message="ALERT: procession and parked auto blocking road — silence zone",
+        correct_fix_description=(
+            "Slow down and wait. Absolutely no horn use — visible_signs indicate silence zone. "
+            "Agent must infer from POI cues that honking is socially unacceptable here."
+        ),
+        expected_behavior=["brake", "wait", "accelerate"],
+        zone_cues=build_zone_cues("temple_zone"),
+        dynamic_events=[
+            {"trigger_step": 5, "kind": "clear_crossing", "message": "Procession moving to the side — narrow corridor opens."},
+            {"trigger_step": 7, "kind": "move_actor_ahead", "message": "Auto has cleared. Lane slowly opening."},
+        ],
+    ),
+    ScenarioSpec(
+        name="market_zone_dense_hawkers",
+        type="market_zone_inference",
+        difficulty=0.42,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal", "lane_status": "missing"},
+        actors=[
+            {"type": "pedestrian", "x": 9,  "y": 1.3, "vx": -0.5, "behavior": "sudden_cross", "lane": "left"},
+            {"type": "auto",       "x": 13, "y": -0.8, "vx": 0.1, "behavior": "cut_in",       "lane": "left"},
+            {"type": "pedestrian", "x": 15, "y": 0.5, "vx": -0.4, "behavior": "sudden_cross", "lane": "center"},
+        ],
+        root_cause=(
+            "A busy market area with hawkers and jaywalking shoppers. "
+            "Agent sees nearby_places=['market'] and ambient_cues about hawker carts. "
+            "Must slow and be patient — inferred, not told."
+        ),
+        alert_message="ALERT: dense market spillover — multiple pedestrians and auto cutting in",
+        correct_fix_description=(
+            "Brake early, be patient with auto cut-in. Horn use must be minimal despite density. "
+            "Agent infers from market zone cues that assertive driving is socially inappropriate."
+        ),
+        expected_behavior=["brake", "wait", "accelerate"],
+        zone_cues=build_zone_cues("market_zone"),
+        dynamic_events=[
+            {"trigger_step": 4, "kind": "clear_crossing", "message": "Pedestrians clear. Auto completes merge ahead."},
+        ],
+    ),
+    ScenarioSpec(
+        name="zone_ambiguity_hospital_at_night",
+        type="zone_ambiguity",
+        difficulty=0.62,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal", "visibility": "night_clear"},
+        actors=[
+            {"type": "car", "x": 18, "y": 0.0, "vx": 0.5, "behavior": "static", "lane": "center"},
+        ],
+        root_cause=(
+            "Ambiguity test: hospital is nearby but it's 3am and the road is empty. "
+            "Should the agent still slow down? Answer: yes — ambulances could emerge any time. "
+            "Agent must reason about time_sensitivity, not just apply a blanket rule."
+        ),
+        alert_message="ALERT: low-visibility night road — distant stalled vehicle ahead",
+        correct_fix_description=(
+            "Maintain slow speed despite the empty road — hospital proximity means ambulances "
+            "may emerge at any time. Agent must weigh pedestrian_density vs time_of_day and "
+            "decide appropriately without explicit instruction."
+        ),
+        expected_behavior=["brake", "wait"],
+        zone_cues={
+            **build_zone_cues("hospital_zone"),
+            "time_of_day": "03:00",
+            "pedestrian_density": "very_low",
+            "ambient_cues": ["ambulance parked outside main entrance", "hospital lights on"],
+        },
+        dynamic_events=[
+            {"trigger_step": 3, "kind": "spawn_vehicle", "message": "Sudden alert: ambulance exiting hospital at speed — yield!",
+             "actor": {"type": "ambulance", "x": 6, "y": -1.5, "vx": 2.8, "behavior": "emergency_pass", "lane": "right"}},
+        ],
+    ),
+
+    # ── AMBIGUOUS ZONE INFERENCE — correct answer is NOT always brake ──────────
+    # These scenarios test that the agent reasons from CONDITIONS, not just zone type.
+    # A good agent learns: zone type + context → appropriate speed.
+    # A bad agent always brakes near sensitive zones regardless of actual conditions.
+
+    ScenarioSpec(
+        name="hospital_zone_low_crowd_clear_road",
+        type="hospital_zone_inference",
+        difficulty=0.40,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal", "visibility": "clear",
+                     "traffic_signal": "green"},
+        actors=[],
+        root_cause=(
+            "Hospital zone visible (signs: Slow-Hospital). "
+            "But: pedestrian_density=very_low, road is empty, no hazard within 30m, signal=green. "
+            "CORRECT ACTION: maintain current speed (accelerate from rest if moving). "
+            "WRONG: unnecessary braking with no hazard present wastes time and frustrates flow."
+        ),
+        alert_message="Notice: hospital zone ahead — road currently clear, signal green",
+        correct_fix_description=(
+            "Maintain speed or resume normal driving. Zone sign is present but no hazard exists. "
+            "Only slow if a hazard appears. Over-braking on empty hospital roads is incorrect."
+        ),
+        expected_behavior=["accelerate", "wait"],
+        zone_cues={
+            **build_zone_cues("hospital_zone"),
+            "pedestrian_density": "very_low",
+            "time_of_day": "14:00",
+            "ambient_cues": ["hospital entrance 40m to the right", "no patients visible on road"],
+        },
+        dynamic_events=[
+            {"trigger_step": 4, "kind": "spawn_vehicle",
+             "message": "Sudden: ambulance exiting driveway — now the agent SHOULD brake and yield.",
+             "actor": {"type": "ambulance", "x": 8, "y": -1.5, "vx": 1.5, "behavior": "emergency_pass", "lane": "right"}},
+        ],
+    ),
+
+    ScenarioSpec(
+        name="school_zone_after_hours_empty",
+        type="school_zone_inference",
+        difficulty=0.42,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal", "visibility": "clear",
+                     "traffic_signal": "none"},
+        actors=[],
+        root_cause=(
+            "School zone signs are visible but time_of_day=22:00 (night), "
+            "pedestrian_density=none, no children, school is closed. "
+            "CORRECT ACTION: resume normal driving speed. "
+            "WRONG: mandatory brake in school zone at 10pm shows lack of contextual reasoning."
+        ),
+        alert_message="Notice: school zone — no activity detected, late night",
+        correct_fix_description=(
+            "Proceed at normal speed. School zone is inactive at this hour. "
+            "Good agent reads pedestrian_density and time_of_day to contextualise zone cues."
+        ),
+        expected_behavior=["accelerate"],
+        zone_cues={
+            **build_zone_cues("school_zone"),
+            "pedestrian_density": "none",
+            "time_of_day": "22:00",
+            "ambient_cues": ["school gate closed and locked", "no buses or children visible", "streetlights on"],
+        },
+        dynamic_events=[],
+    ),
+
+    ScenarioSpec(
+        name="market_zone_early_morning_quiet",
+        type="market_zone_inference",
+        difficulty=0.38,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal", "visibility": "clear"},
+        actors=[],
+        root_cause=(
+            "Market zone signs visible but time_of_day=06:00, stalls not yet open, "
+            "pedestrian_density=very_low. "
+            "CORRECT: maintain or gently increase speed — market is inactive. "
+            "WRONG: braking to crawl speed in an empty market street is unnecessary."
+        ),
+        alert_message="Notice: market area — early morning, few pedestrians",
+        correct_fix_description=(
+            "Proceed at moderate speed. No hawkers or jaywalkers in road. "
+            "Contextually-aware agent recognises this is a pre-opening hour."
+        ),
+        expected_behavior=["accelerate", "wait"],
+        zone_cues={
+            **build_zone_cues("market_zone"),
+            "pedestrian_density": "very_low",
+            "time_of_day": "06:00",
+            "ambient_cues": ["shop shutters closed", "street sweeper at far end", "no pedestrians on road"],
+        },
+        dynamic_events=[
+            {"trigger_step": 5, "kind": "spawn_vehicle",
+             "message": "Sudden: early delivery truck reversing out of alley — slow now.",
+             "actor": {"type": "truck", "x": 9, "y": 0.0, "vx": -0.5, "behavior": "zig_zag", "lane": "center"}},
+        ],
+    ),
+
+    ScenarioSpec(
+        name="temple_zone_no_procession_normal_flow",
+        type="temple_zone_inference",
+        difficulty=0.44,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal", "visibility": "clear"},
+        actors=[],
+        root_cause=(
+            "Temple zone with No-Horn sign visible. But it's a regular Tuesday afternoon, "
+            "no procession, no devotees on road, pedestrian density=low. "
+            "CORRECT: proceed at normal speed, avoid horn, but no need to brake. "
+            "Signs say 'No Horn' — that is the constraint, not speed reduction."
+        ),
+        alert_message="Notice: temple zone — silence required, road currently clear",
+        correct_fix_description=(
+            "Maintain speed. Absolute constraint: do NOT use horn. "
+            "No speed reduction needed — no hazard in road at this moment."
+        ),
+        expected_behavior=["accelerate", "wait"],
+        zone_cues={
+            **build_zone_cues("temple_zone"),
+            "pedestrian_density": "low",
+            "time_of_day": "15:00",
+            "ambient_cues": ["temple gate visible on right", "no procession active", "occasional pedestrian on footpath only"],
+        },
+        dynamic_events=[
+            {"trigger_step": 4, "kind": "spawn_vehicle",
+             "message": "A devotee suddenly steps off footpath into road — brake carefully, still no horn.",
+             "actor": {"type": "pedestrian", "x": 10, "y": 0.8, "vx": -0.3, "behavior": "sudden_cross", "lane": "left"}},
+        ],
+    ),
+
+    ScenarioSpec(
+        name="highway_after_sensitive_zone",
+        type="zone_ambiguity",
+        difficulty=0.50,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal", "visibility": "clear",
+                     "lane_status": "clear", "traffic_signal": "none"},
+        actors=[],
+        root_cause=(
+            "The ego vehicle has just passed through a hospital zone and is now on an "
+            "open highway stretch. zone_cues now show nearby_places=['highway_entry'], "
+            "pedestrian_density=low, no sensitive POI. "
+            "CORRECT: ACCELERATE back to highway speed — agent must shed the earlier slow-zone "
+            "constraint and adapt to the new context. "
+            "WRONG: continuing hospital-zone caution on an open highway is over-conservative."
+        ),
+        alert_message="Hospital zone cleared — entering open highway segment",
+        correct_fix_description=(
+            "Accelerate to highway speed. Zone context has changed. "
+            "Continuing to crawl after a sensitive zone has ended is a reasoning failure."
+        ),
+        expected_behavior=["accelerate"],
+        zone_cues={
+            **build_zone_cues("highway_entry"),
+            "pedestrian_density": "low",
+            "time_of_day": "11:00",
+            "ambient_cues": ["open road visible for 500m", "no pedestrians", "highway speed limit sign: 80kph"],
+        },
+        dynamic_events=[],
+    ),
+
+    ScenarioSpec(
+        name="construction_zone_flagman_waves_forward",
+        type="traffic_light_ambiguity",
+        difficulty=0.55,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "construction", "lane_status": "missing",
+                     "traffic_signal": "policeman_override"},
+        actors=[
+            {"type": "traffic_police", "x": 12, "y": 0.3, "vx": 0.0, "behavior": "signal_override", "lane": "center"},
+        ],
+        root_cause=(
+            "Construction zone — single lane, flagman present. "
+            "At step 1: flagman is holding stop sign. At step 3: flagman waves forward. "
+            "CORRECT: wait when flagman says stop, then ACCELERATE when waved forward. "
+            "WRONG: staying stopped after the forward wave — agent must respond to dynamic signal."
+        ),
+        alert_message="ALERT: construction zone flagman — obey hand signals",
+        correct_fix_description=(
+            "Wait when flagman shows stop. Immediately accelerate when flagman waves forward. "
+            "Tests dynamic signal reading — not a static brake-and-wait scenario."
+        ),
+        expected_behavior=["wait", "accelerate"],
+        dynamic_events=[
+            {"trigger_step": 3, "kind": "change_signal",
+             "message": "Flagman waves your lane forward — proceed through construction zone.",
+             "traffic_signal": "policeman_override"},
+        ],
+    ),
+
+    ScenarioSpec(
+        name="police_zone_stop_then_proceed",
+        type="police_override",
+        difficulty=0.48,
+        vehicle_profile=dict(DEFAULT_VEHICLE_PROFILE),
+        environment={**DEFAULT_SCENE_ENV, "road_condition": "normal",
+                     "traffic_signal": "red"},
+        actors=[
+            {"type": "traffic_police", "x": 11, "y": 0.3, "vx": 0.0, "behavior": "signal_override", "lane": "center"},
+        ],
+        root_cause=(
+            "Police officer at junction with red light. Officer initially holds stop hand. "
+            "At step 4 they wave the agent's lane forward (overriding the red light). "
+            "CORRECT: stop when signal=red+stop hand, then accelerate when officer waves. "
+            "WRONG: remaining stopped even after police wave-through — over-deferring."
+        ),
+        alert_message="ALERT: police override junction — read officer hand signal",
+        correct_fix_description=(
+            "Stop on red. When officer waves forward, ignore red light and accelerate. "
+            "Police override trumps traffic signal — agent must understand authority hierarchy."
+        ),
+        expected_behavior=["wait", "brake", "accelerate"],
+        dynamic_events=[
+            {"trigger_step": 4, "kind": "change_signal",
+             "message": "Police officer waves your lane forward — red light overridden, proceed.",
+             "traffic_signal": "policeman_override"},
+        ],
+    ),
 ]
 
 SUDDEN_EVENT_POOL = [
@@ -478,7 +842,98 @@ class ScenarioGenerator:
         # so the agent is always being stretched
         frontier = [s for s in pool if abs(s.difficulty - difficulty) <= 0.20]
         chosen = random.choice(frontier or pool)
+
+        # ── Multi-scenario combination (difficulty >= 0.50) ───────────────────
+        # At intermediate+ difficulty, combine up to 3 scenarios into one episode.
+        # This is the core of real Indian driving: nothing happens in isolation.
+        # Combinations are created by merging actors and cascading dynamic events.
+        if difficulty >= 0.50:
+            return self._with_multi_scenario_combination(chosen, candidates, difficulty)
+
         return self._with_secondary_event(chosen, difficulty)
+
+    def _with_multi_scenario_combination(
+        self,
+        primary: ScenarioSpec,
+        candidates: list,
+        difficulty: float,
+    ) -> ScenarioSpec:
+        """Combine 2-3 scenarios into one episode by merging actors + events.
+
+        Design rules:
+        - Max 3 combined scenarios per episode (prevents chaos overload)
+        - Secondary scenarios' actors are offset in time (trigger_step) so the
+          agent faces them sequentially, not all at once
+        - Zone cues are merged from all contributing scenarios
+        - Difficulty gates the number of combinations:
+            0.50-0.65 → 2 scenarios combined
+            0.65+     → 2-3 scenarios combined
+        - Always add a SUDDEN_EVENT_POOL event if room permits
+        """
+        chosen = deepcopy(primary)
+        if chosen.type == "adversarial":
+            return chosen
+
+        # How many scenarios to combine (2 or 3 based on difficulty)
+        max_extra = 1 if difficulty < 0.65 else 2
+        n_extra = random.randint(1, max_extra)
+
+        # Pick secondary scenarios that are NOT the same type as primary
+        secondaries = [
+            s for s in candidates
+            if s.type != chosen.type
+            and s.difficulty <= difficulty + 0.10
+            and s.actors  # must have actual actors to inject
+        ]
+        random.shuffle(secondaries)
+        secondaries = secondaries[:n_extra]
+
+        step_offset = 4  # secondary hazards appear after this many steps
+        for sec in secondaries:
+            step_offset += 3
+            # Inject secondary actors as dynamic spawn events
+            for actor in sec.actors[:2]:  # at most 2 actors per secondary
+                chosen.dynamic_events.append({
+                    "trigger_step": step_offset,
+                    "kind": "spawn_vehicle",
+                    "message": f"Sudden alert ({sec.type}): {sec.alert_message}",
+                    "hazard_type": sec.type,
+                    "actor": dict(actor),
+                })
+            step_offset += 2
+            # Merge zone cues (add any new ambient cues from the secondary)
+            sec_cues = getattr(sec, "zone_cues", {}) or {}
+            if sec_cues and not chosen.zone_cues:
+                chosen.zone_cues = sec_cues
+            elif sec_cues:
+                # Merge ambient cues without duplicating
+                existing_cues = chosen.zone_cues.get("ambient_cues", []) or []
+                new_cues = sec_cues.get("ambient_cues", []) or []
+                merged = list(dict.fromkeys(existing_cues + new_cues))
+                chosen.zone_cues = {**chosen.zone_cues, "ambient_cues": merged[:4]}
+
+        # Add one SUDDEN_EVENT_POOL event at the end if difficulty warrants it
+        eligible = [
+            item for item in SUDDEN_EVENT_POOL
+            if difficulty >= item["min_difficulty"]
+            and item["event"].get("hazard_type") != chosen.type
+        ]
+        if eligible:
+            selected = deepcopy(random.choice(eligible))
+            event = selected["event"]
+            event["trigger_step"] = step_offset + 1
+            chosen.dynamic_events.append(event)
+
+        # Update name and root_cause to reflect the combination
+        if secondaries:
+            combo_types = "+".join(s.type for s in secondaries)
+            chosen.name = f"{chosen.name}__with_{combo_types}"
+            chosen.root_cause = (
+                f"[COMBINED EPISODE: {chosen.type} + {combo_types}] "
+                + chosen.root_cause
+            )
+
+        return chosen
 
     def _with_secondary_event(self, scenario: ScenarioSpec, difficulty: float) -> ScenarioSpec:
         chosen = deepcopy(scenario)

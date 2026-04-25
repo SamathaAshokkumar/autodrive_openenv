@@ -1,0 +1,60 @@
+{
+  "episode_count": 1,
+  "reward_curve": [
+    6.04
+  ],
+  "rolling_10_curve": [
+    6.04
+  ],
+  "rolling_20_curve": [
+    6.04
+  ],
+  "success_curve": [
+    1
+  ],
+  "difficulty_curve": [
+    0.15
+  ],
+  "overall": {
+    "mean_reward": 6.04,
+    "max_reward": 6.04,
+    "min_reward": 6.04,
+    "mean_success_rate": 1.0,
+    "final_10_mean": 6.04
+  },
+  "by_scenario": {
+    "pedestrian_crossing": {
+      "episodes": 1,
+      "mean_reward": 6.04,
+      "success_rate": 1.0
+    }
+  },
+  "tier_progression": {
+    "warmup": {
+      "episodes": 1,
+      "mean_reward": 6.04
+    }
+  },
+  "pipeline_impact": {
+    "with_pipeline_mean": 0.0,
+    "without_pipeline_mean": 6.04,
+    "pipeline_episodes": 0
+  },
+  "episodes": [
+    {
+      "episode": 1,
+      "episode_id": "f54f4da1-8697-40b6-8dac-f20ff55b9d0e",
+      "scenario_type": "pedestrian_crossing",
+      "difficulty": 0.15,
+      "tier": "warmup",
+      "success": true,
+      "total_reward": 6.04,
+      "steps": 8,
+      "mean_step_reward": 0.755,
+      "timestamp": 1777125501.8341303,
+      "pipeline_used": false,
+      "route_mode": false,
+      "route_progress_pct": 0.0
+    }
+  ]
+}

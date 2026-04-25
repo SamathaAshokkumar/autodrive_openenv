@@ -1,0 +1,8 @@
+{"time":"2026-04-25T19:28:17.1739859+05:30","level":"INFO","msg":"main: starting server","port-filename":"C:\\Users\\samatha\\AppData\\Local\\Temp\\tmpsx06jjd9\\port-28788.txt","pid":28788,"detached":false,"idle-timeout":600000000000,"log-level":0,"disable-analytics":false,"shutdown-on-parent-exit":false,"enable-dcgm-profiling":false}
+{"time":"2026-04-25T19:28:17.1807525+05:30","level":"INFO","msg":"server: will exit if parent process dies","ppid":28788}
+{"time":"2026-04-25T19:28:17.1807525+05:30","level":"INFO","msg":"server: accepting connections","addr":{"Name":"C:\\Users\\samatha\\AppData\\Local\\Temp\\wandb-28788-23780-4140817709\\socket","Net":"unix"}}
+{"time":"2026-04-25T19:28:17.1807525+05:30","level":"INFO","msg":"server: accepting connections","addr":{"IP":"127.0.0.1","Port":60152,"Zone":""}}
+{"time":"2026-04-25T19:28:19.3898716+05:30","level":"INFO","msg":"connection: ManageConnectionData: new connection created","id":"1(127.0.0.1:63712)"}
+{"time":"2026-04-25T19:28:19.4294108+05:30","level":"INFO","msg":"handleInformInit: received","streamId":"6wbcqovs","id":"1(127.0.0.1:63712)"}
+{"time":"2026-04-25T19:28:20.5156248+05:30","level":"INFO","msg":"handleInformInit: stream started","streamId":"6wbcqovs","id":"1(127.0.0.1:63712)"}
+{"time":"2026-04-25T19:28:26.8142211+05:30","level":"INFO","msg":"connection: cancelling request","id":"1(127.0.0.1:63712)","requestId":"c226jvd13zi2"}

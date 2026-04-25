@@ -1,0 +1,1382 @@
+[34m[1mwandb[0m: Detected [huggingface_hub.inference, mcp, openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai
+  [wandb] Run started → https://wandb.ai/samatha45102-scaler/autodrive-gym/runs/1sh41omf
+
+==================================================================
+  AutoDrive Gym — Training Run
+  mode=adaptive  target_episodes=50  task=curriculum
+==================================================================
+
+==================================================================
+  EPISODE 1/50  [curriculum]
+  scenario=                            tier=warmup  diff=0.15
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@13.0m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pedestrian_0→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@12.0m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_right        val=0.5 | r=+0.6500 | pedestrian_crossing@11.0m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@10.9m | stage=clearing      [safe✓]
+  step  5 ✓ | steer_left         val=0.5 | r=+0.6500 | pedestrian_crossing@10.1m | stage=clearing      [safe✓]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.9990 | pedestrian_crossing@9.2m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.790  Q-states=4  collisions=0  entropy=1.33
+
+  [RESULT] ✅ SUCCESS  steps=6  total_reward=4.2490  end=cleared
+           per-step: avg=0.7082  best=0.9990  worst=0.6500
+           roll10=4.2490  SR(last20)=100.0%  tier=warmup  diff=0.15
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 2/50  [curriculum]
+  scenario=                            tier=warmup  diff=0.15
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | bike_blind_spot@8.2m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: bike_0→rush(20%)
+  step  2 ✓ | accelerate         val=0.5 | r=+0.6500 | bike_blind_spot@7.9m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | wait               val=0.5 | r=+0.7300 | bike_blind_spot@7.5m | stage=approaching   [safe✓ [AVOIDED↯]]
+  CF: wait(r=0.650) ~ suboptimal [AVOIDED COLLISION] | best alt: brake(0.819)
+  step  4 ✓ | wait               val=0.5 | r=+0.7300 | bike_blind_spot@10.0m | stage=approaching   [safe✓ [AVOIDED↯]]
+  step  5 ✓ | brake              val=0.7 | r=+0.6500 | bike_blind_spot@10.5m | stage=approaching   [safe✓]
+  step  6 ✓ | brake              val=0.7 | r=+0.6500 | bike_blind_spot@11.0m | stage=approaching   [safe✓]
+  step  7 ✓ | brake              val=0.7 | r=+0.5330 | bike_blind_spot@11.6m | stage=approaching   [safe✓]
+  step  8 ✓ | change_lane_right  val=0.5 | r=+0.6500 | bike_blind_spot@12.3m | stage=approaching   [safe✓]
+  step  9 ✓ | horn               val=0.5 | r=+0.6500 | bike_blind_spot@12.8m | stage=approaching   [safe✓]
+  step 10 ✓ | steer_right        val=0.5 | r=+0.6500 | bike_blind_spot@13.5m | stage=approaching   [safe✓]
+  step 11 ✓ | wait               val=0.5 | r=+0.6500 | bike_blind_spot@14.1m | stage=approaching   [safe✓]
+  step 12 ✓ | change_lane_left   val=0.5 | r=+0.6500 | bike_blind_spot@14.4m | stage=approaching   [safe✓]
+  step 13 ✓ | change_lane_left   val=0.5 | r=+0.6500 | bike_blind_spot@14.8m | stage=approaching   [safe✓]
+  step 14 ✓ | change_lane_right  val=0.5 | r=+0.6500 | bike_blind_spot@15.6m | stage=approaching   [safe✓]
+  step 15 ✓ | brake              val=0.7 | r=+0.6500 | bike_blind_spot@16.2m | stage=approaching   [safe✓]
+  step 16 ✓ | accelerate         val=0.5 | r=+0.6500 | bike_blind_spot@16.4m | stage=approaching   [safe✓]
+  step 17 ✓ | accelerate         val=0.5 | r=+0.6500 | bike_blind_spot@16.3m | stage=approaching   [safe✓]
+  step 18 ✓ | accelerate         val=0.5 | r=+0.5330 | bike_blind_spot@15.8m | stage=approaching   [safe✓]
+  step 19 ✗ | accelerate         val=0.5 | r=+0.4160 | bike_blind_spot@clear | stage=approaching   [safe✓]
+  step 20 ✓ | wait               val=0.5 | r=+0.7500 | bike_blind_spot@clear | stage=approaching   [safe✓]
+  [LEARNER] ε=0.781  Q-states=11  collisions=0  entropy=1.76
+
+  [RESULT] ✅ SUCCESS  steps=20  total_reward=12.7920  end=timeout
+           per-step: avg=0.6396  best=0.7500  worst=0.4160
+           roll10=8.5205  SR(last20)=100.0%  tier=warmup  diff=0.15
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 3/50  [curriculum]
+  scenario=                            tier=warmup  diff=0.15
+------------------------------------------------------------------
+  step  1 ✓ | brake              val=0.7 | r=+0.6500 | auto_cut_in@10.0m  | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  beliefs: auto_0→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | auto_cut_in@10.0m  | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | brake              val=0.7 | r=+0.5330 | auto_cut_in@10.0m  | stage=clearing      [safe✓]
+  CF: brake(r=0.533) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.6500 | auto_cut_in@9.6m   | stage=clearing      [safe✓]
+  step  5 ✓ | horn               val=0.5 | r=+0.6500 | auto_cut_in@9.2m   | stage=clearing      [safe✓]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | auto_cut_in@7.9m   | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.6500 | auto_cut_in@5.3m   | stage=clearing      [safe✓]
+  step  8 ✓ | accelerate         val=0.5 | r=+0.9990 | auto_cut_in@3.1m   | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.771  Q-states=15  collisions=0  entropy=0.97
+
+  [RESULT] ✅ SUCCESS  steps=8  total_reward=5.4320  end=cleared
+           per-step: avg=0.6790  best=0.9990  worst=0.5330
+           roll10=7.4910  SR(last20)=100.0%  tier=warmup  diff=0.25
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 4/50  [curriculum]
+  scenario=                            tier=warmup  diff=0.25
+------------------------------------------------------------------
+  step  1 ✓ | wait               val=0.5 | r=+0.6500 | speed_breaker@13.0m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: speed_breaker_0→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | speed_breaker@13.0m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | ambulance_approach@9.1m | stage=active        [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.6500 | ambulance_approach@5.4m | stage=active        [safe✓]
+  step  5 ✗ | steer_left         val=0.5 | r=+0.3250 | ambulance_approach@2.0m | stage=active        [near-miss]
+  step  6 ✓ | brake              val=0.7 | r=+0.5500 | ambulance_approach@2.7m | stage=active
+  step  7 ✓ | steer_left         val=0.5 | r=+0.6500 | ambulance_approach@6.7m | stage=active        [safe✓]
+  step  8 ✓ | steer_left         val=0.5 | r=+0.6500 | ambulance_approach@10.8m | stage=active        [safe✓]
+  step  9 ✓ | brake              val=0.7 | r=+0.6500 | ambulance_approach@14.8m | stage=clearing      [safe✓]
+  step 10 ✓ | change_lane_right  val=0.5 | r=+0.6500 | ambulance_approach@18.9m | stage=clearing      [safe✓]
+  step 11 ✓ | horn               val=0.5 | r=+0.6500 | ambulance_approach@23.0m | stage=clearing      [safe✓]
+  step 12 ✓ | wait               val=0.5 | r=+0.6500 | ambulance_approach@27.1m | stage=clearing      [safe✓]
+  step 13 ✓ | horn               val=0.5 | r=+0.6500 | ambulance_approach@31.2m | stage=clearing      [safe✓]
+  step 14 ✓ | accelerate         val=0.5 | r=+0.6500 | ambulance_approach@34.9m | stage=clearing      [safe✓]
+  step 15 ✓ | accelerate         val=0.5 | r=+0.6500 | ambulance_approach@38.2m | stage=clearing      [safe✓]
+  step 16 ✓ | wait               val=0.5 | r=+0.9900 | ambulance_approach@41.5m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.762  Q-states=23  collisions=0  entropy=1.72
+
+  [RESULT] ✅ SUCCESS  steps=16  total_reward=10.3150  end=cleared
+           per-step: avg=0.6447  best=0.9900  worst=0.3250
+           roll10=8.1970  SR(last20)=100.0%  tier=warmup  diff=0.25
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 5/50  [curriculum]
+  scenario=                            tier=warmup  diff=0.25
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | pothole_ahead@15.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pothole_0→rush(20%)
+  step  2 ✓ | accelerate         val=0.5 | r=+0.6500 | pothole_ahead@14.8m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  step  3 ✓ | change_lane_right  val=0.5 | r=+0.6500 | animal_crossing@9.0m | stage=clearing      [safe✓]
+  CF: change_lane_right(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  step  4 ✓ | brake              val=0.7 | r=+0.6500 | animal_crossing@8.7m | stage=clearing      [safe✓]
+  step  5 ✓ | wait               val=0.5 | r=+0.6500 | animal_crossing@8.4m | stage=clearing      [safe✓]
+  step  6 ✓ | change_lane_left   val=0.5 | r=+0.6500 | animal_crossing@8.0m | stage=active        [safe✓]
+  step  7 ✓ | brake              val=0.7 | r=+0.6500 | animal_crossing@7.7m | stage=active        [safe✓]
+  step  8 ✓ | wait               val=0.5 | r=+0.6500 | animal_crossing@7.5m | stage=active        [safe✓]
+  step  9 ✓ | change_lane_left   val=0.5 | r=+0.6500 | animal_crossing@7.1m | stage=active        [safe✓]
+  step 10 ✓ | wait               val=0.5 | r=+0.6500 | animal_crossing@6.9m | stage=active        [safe✓]
+  step 11 ✓ | wait               val=0.5 | r=+0.6500 | animal_crossing@6.8m | stage=active        [safe✓]
+  step 12 ✓ | wait               val=0.5 | r=+0.5330 | animal_crossing@6.7m | stage=active        [safe✓]
+  step 13 ✗ | wait               val=0.5 | r=+0.4160 | animal_crossing@6.7m | stage=active        [safe✓]
+  step 14 ✓ | change_lane_left   val=0.5 | r=+0.6500 | animal_crossing@6.2m | stage=active        [safe✓]
+  step 15 ✓ | steer_left         val=0.5 | r=+0.6500 | pothole_ahead@14.2m | stage=active        [safe✓]
+  step 16 ✗ | steer_left         val=0.5 | r=+0.2750 | pothole_ahead@14.3m | stage=active        [safe✓]
+  step 17 ✗ | accelerate         val=0.5 | r=+0.2750 | pothole_ahead@13.9m | stage=active        [safe✓]
+  step 18 ✗ | brake              val=0.7 | r=+0.2750 | pothole_ahead@13.9m | stage=active        [safe✓]
+  step 19 ✗ | brake              val=0.7 | r=+0.2750 | pothole_ahead@13.9m | stage=active        [safe✓]
+  step 20 ✗ | wait               val=0.5 | r=+0.2750 | pothole_ahead@13.9m | stage=active        [safe✓]
+  step 21 ✗ | brake              val=0.7 | r=+0.2060 | pothole_ahead@13.9m | stage=active        [safe✓]
+  [LEARNER] ε=0.753  Q-states=31  collisions=0  entropy=1.63
+
+  [RESULT] ✅ SUCCESS  steps=21  total_reward=10.9800  end=timeout
+           per-step: avg=0.5229  best=0.6500  worst=0.2060
+           roll10=8.7536  SR(last20)=100.0%  tier=warmup  diff=0.17
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 6/50  [curriculum]
+  scenario=                            tier=warmup  diff=0.17
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@13.0m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pedestrian_0→rush(20%)
+  step  2 ✓ | steer_left         val=0.5 | r=+0.6500 | pedestrian_crossing@12.0m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@11.0m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | steer_right        val=0.5 | r=+0.6500 | pedestrian_crossing@10.8m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.9990 | pedestrian_crossing@9.8m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.744  Q-states=32  collisions=0  entropy=1.33
+
+  [RESULT] ✅ SUCCESS  steps=5  total_reward=3.5990  end=cleared
+           per-step: avg=0.7198  best=0.9990  worst=0.6500
+           roll10=7.8945  SR(last20)=100.0%  tier=warmup  diff=0.25
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 7/50  [curriculum]
+  scenario=                            tier=warmup  diff=0.25
+------------------------------------------------------------------
+  step  1 ✓ | steer_right        val=0.5 | r=+0.6500 | bike_blind_spot@8.6m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: bike_0→rush(20%)
+  step  2 ✓ | steer_right        val=0.5 | r=+0.6500 | bike_blind_spot@9.0m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | speed_breaker@14.0m | stage=clearing      [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | horn               val=0.5 | r=+0.6500 | speed_breaker@14.0m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | speed_breaker@13.6m | stage=clearing      [safe✓]
+  step  6 ✓ | change_lane_right  val=0.5 | r=+0.6500 | speed_breaker@13.3m | stage=clearing      [safe✓]
+  step  7 ✓ | wait               val=0.5 | r=+0.6500 | speed_breaker@12.9m | stage=clearing      [safe✓]
+  step  8 ✓ | wait               val=0.5 | r=+0.6500 | speed_breaker@12.5m | stage=clearing      [safe✓]
+  step  9 ✓ | wait               val=0.5 | r=+0.5330 | speed_breaker@12.1m | stage=clearing      [safe✓]
+  step 10 ✓ | steer_left         val=0.5 | r=+0.9990 | speed_breaker@11.7m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.735  Q-states=34  collisions=0  entropy=1.83
+
+  [RESULT] ✅ SUCCESS  steps=10  total_reward=6.7320  end=cleared
+           per-step: avg=0.6732  best=0.9990  worst=0.5330
+           roll10=7.7284  SR(last20)=100.0%  tier=warmup  diff=0.25
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 8/50  [curriculum]
+  scenario=                            tier=warmup  diff=0.25
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | speed_breaker@12.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: speed_breaker_0→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | speed_breaker@12.6m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | change_lane_right  val=0.5 | r=+0.6500 | ambulance_approach@9.4m | stage=active        [safe✓]
+  CF: change_lane_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.6500 | ambulance_approach@5.7m | stage=active        [safe✓]
+  step  5 ✗ | wait               val=0.5 | r=+0.3250 | ambulance_approach@2.0m | stage=active        [near-miss]
+  step  6 ✗ | brake              val=0.7 | r=+0.3250 | ambulance_approach@2.1m | stage=active        [near-miss]
+  step  7 ✓ | brake              val=0.7 | r=+0.6500 | ambulance_approach@6.2m | stage=active        [safe✓]
+  step  8 ✓ | steer_right        val=0.5 | r=+0.6500 | ambulance_approach@10.4m | stage=active        [safe✓]
+  step  9 ✓ | accelerate         val=0.5 | r=+0.6500 | ambulance_approach@14.1m | stage=clearing      [safe✓]
+  step 10 ✓ | horn               val=0.5 | r=+0.6500 | ambulance_approach@17.7m | stage=clearing      [safe✓]
+  step 11 ✓ | change_lane_right  val=0.5 | r=+0.9990 | ambulance_approach@21.5m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.726  Q-states=35  collisions=0  entropy=1.67
+
+  [RESULT] ✅ SUCCESS  steps=11  total_reward=6.8490  end=cleared
+           per-step: avg=0.6226  best=0.9990  worst=0.3250
+           roll10=7.6185  SR(last20)=100.0%  tier=beginner  diff=0.45
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 9/50  [curriculum]
+  scenario=                            tier=beginner  diff=0.45
+------------------------------------------------------------------
+  step  1 ✓ | steer_right        val=0.5 | r=+0.6500 | ambulance_approach@4.9m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: wait(0.885)
+  beliefs: ambulance_0→rush(20%)
+  step  2 ✗ | brake              val=0.7 | r=+0.0680 | ambulance_approach@0.9m | stage=approaching   [COLLISION! near-miss]
+  CF: brake(r=0.068) ~ suboptimal | best alt: wait(0.810)
+  [LEARNER] ε=0.718  Q-states=37  collisions=1  entropy=0.69
+
+  [RESULT] ❌ FAIL     steps=2  total_reward=0.7180  end=collision
+           per-step: avg=0.3590  best=0.6500  worst=0.0680
+           roll10=6.8518  SR(last20)=88.9%  tier=beginner  diff=0.36
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 10/50  [curriculum]
+  scenario=                            tier=beginner  diff=0.36
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | traffic_light_ambiguity@10.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: car_0→rush(20%) | traffic_police_1→rush(20%) | truck_2→rush(20%)
+  step  2 ✓ | steer_left         val=0.5 | r=+0.6500 | traffic_light_ambiguity@10.2m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_left         val=0.5 | r=+0.6500 | animal_crossing@10.0m | stage=clearing      [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@8.7m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@7.1m | stage=active        [safe✓]
+  step  6 ✓ | wait               val=0.5 | r=+0.6500 | animal_crossing@5.5m | stage=active        [safe✓]
+  step  7 ✓ | change_lane_right  val=0.5 | r=+0.6500 | animal_crossing@4.3m | stage=active        [safe✓]
+  step  8 ✓ | horn               val=0.5 | r=+0.6500 | animal_crossing@3.3m | stage=active        [safe✓]
+  step  9 ✓ | wait               val=0.5 | r=+0.5500 | animal_crossing@2.9m | stage=active
+  step 10 ✓ | brake              val=0.7 | r=+0.5500 | animal_crossing@3.4m | stage=active
+  step 11 ✗ | steer_left         val=0.5 | r=+0.3250 | animal_crossing@3.7m | stage=active        [near-miss]
+  step 12 ✗ | steer_right        val=0.5 | r=+0.3250 | animal_crossing@4.8m | stage=active        [near-miss]
+  step 13 ✗ | horn               val=0.5 | r=+0.3250 | animal_crossing@5.5m | stage=active        [near-miss]
+  step 14 ✗ | steer_right        val=0.5 | r=+0.3250 | animal_crossing@6.7m | stage=active        [near-miss]
+  step 15 ✗ | horn               val=0.5 | r=+0.0680 | traffic_light_ambiguity@1.1m | stage=active        [COLLISION! near-miss]
+  [LEARNER] ε=0.709  Q-states=43  collisions=1  entropy=1.86
+
+  ┌─ LEARNING PROGRESS (ep 10) ──────────────────────────────
+  │  Early phase:  reward=8.754  success=100.0%  collisions/ep=0.00
+  │  Latest phase: reward=5.113  success=60.0%  collisions/ep=0.40
+  │  Trend: ↓ declining  (-41.6% reward change)
+  │  Q-states learned: 43
+  └──────────────────────────────────────────────────
+
+  [RESULT] ❌ FAIL     steps=15  total_reward=7.6680  end=collision
+           per-step: avg=0.5112  best=0.6500  worst=0.0680
+           roll10=6.9334  SR(last20)=80.0%  tier=beginner  diff=0.29
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 11/50  [curriculum]
+  scenario=                            tier=beginner  diff=0.29
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | pothole_ahead@15.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pothole_0→rush(20%)
+  step  2 ✓ | steer_right        val=0.5 | r=+0.6500 | pothole_ahead@15.2m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  step  3 ✓ | wait               val=0.5 | r=+0.6500 | animal_crossing@9.8m | stage=clearing      [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  step  4 ✓ | wait               val=0.5 | r=+0.6500 | animal_crossing@9.1m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.9990 | animal_crossing@7.9m | stage=active        [safe✓ cleared✓]
+  [LEARNER] ε=0.701  Q-states=44  collisions=0  entropy=1.05
+
+  [RESULT] ✅ SUCCESS  steps=5  total_reward=3.5990  end=cleared
+           per-step: avg=0.7198  best=0.9990  worst=0.6500
+           roll10=6.8684  SR(last20)=81.8%  tier=beginner  diff=0.45
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 12/50  [curriculum]
+  scenario=                            tier=beginner  diff=0.45
+------------------------------------------------------------------
+  step  1 ✓ | brake              val=0.7 | r=+0.6500 | traffic_jam@11.0m  | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  beliefs: car_0→rush(20%) | auto_1→rush(20%)
+  step  2 ✓ | steer_right        val=0.5 | r=+0.6500 | traffic_jam@11.0m  | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | pothole_ahead@13.0m | stage=clearing      [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.6500 | pothole_ahead@12.6m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | pothole_ahead@11.8m | stage=clearing      [safe✓]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.9990 | pothole_ahead@10.6m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.692  Q-states=47  collisions=0  entropy=1.01
+
+  [RESULT] ✅ SUCCESS  steps=6  total_reward=4.2490  end=cleared
+           per-step: avg=0.7082  best=0.9990  worst=0.6500
+           roll10=6.0141  SR(last20)=83.3%  tier=beginner  diff=0.45
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 13/50  [curriculum]
+  scenario=                            tier=beginner  diff=0.45
+------------------------------------------------------------------
+  step  1 ✓ | wait               val=0.5 | r=+0.6500 | temple_zone_inference@9.7m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: pedestrian_0→rush(20%) | pedestrian_1→rush(20%) | auto_2→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | temple_zone_inference@9.4m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | change_lane_right  val=0.5 | r=+0.6500 | temple_zone_inference@9.3m | stage=approaching   [safe✓]
+  CF: change_lane_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@9.0m | stage=clearing      [safe✓]
+  step  5 ✓ | steer_right        val=0.5 | r=+0.6500 | pedestrian_crossing@11.3m | stage=clearing      [safe✓]
+  step  6 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@10.9m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@10.2m | stage=clearing      [safe✓]
+  step  8 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@9.4m | stage=clearing      [safe✓]
+  step  9 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@14.1m | stage=clearing      [safe✓]
+  step 10 ✓ | steer_right        val=0.5 | r=+0.9990 | pedestrian_crossing@13.3m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.684  Q-states=51  collisions=0  entropy=1.22
+
+  [RESULT] ✅ SUCCESS  steps=10  total_reward=6.8490  end=cleared
+           per-step: avg=0.6849  best=0.9990  worst=0.6500
+           roll10=6.1558  SR(last20)=84.6%  tier=beginner  diff=0.45
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 14/50  [curriculum]
+  scenario=                            tier=beginner  diff=0.45
+------------------------------------------------------------------
+  step  1 ✓ | steer_left         val=0.5 | r=+0.6500 | crowded_market@11.7m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: pedestrian_0→rush(20%) | auto_1→rush(20%)
+  step  2 ✓ | steer_left         val=0.5 | r=+0.6500 | crowded_market@11.2m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | accelerate         val=0.5 | r=+0.6500 | ambulance_approach@9.6m | stage=active        [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | horn               val=0.5 | r=+0.6500 | ambulance_approach@6.0m | stage=active        [safe✓]
+  step  5 ✗ | steer_right        val=0.5 | r=+0.3250 | ambulance_approach@2.4m | stage=active        [near-miss]
+  step  6 ✗ | brake              val=0.7 | r=+0.3250 | ambulance_approach@2.3m | stage=active        [near-miss]
+  step  7 ✓ | steer_right        val=0.5 | r=+0.6500 | ambulance_approach@6.2m | stage=active        [safe✓]
+  step  8 ✓ | brake              val=0.7 | r=+0.6500 | ambulance_approach@10.3m | stage=active        [safe✓]
+  step  9 ✓ | wait               val=0.5 | r=+0.6500 | ambulance_approach@14.4m | stage=clearing      [safe✓]
+  step 10 ✓ | accelerate         val=0.5 | r=+0.6500 | ambulance_approach@18.1m | stage=clearing      [safe✓]
+  step 11 ✓ | accelerate         val=0.5 | r=+0.9990 | ambulance_approach@21.4m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.676  Q-states=57  collisions=0  entropy=1.72
+
+  [RESULT] ✅ SUCCESS  steps=11  total_reward=6.8490  end=cleared
+           per-step: avg=0.6226  best=0.9990  worst=0.3250
+           roll10=5.8092  SR(last20)=85.7%  tier=beginner  diff=0.45
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 15/50  [curriculum]
+  scenario=                            tier=beginner  diff=0.45
+------------------------------------------------------------------
+  step  1 ✓ | wait               val=0.5 | r=+0.6500 | market_zone_inference@8.5m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: pedestrian_0→rush(20%) | auto_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | steer_left         val=0.5 | r=+0.6500 | market_zone_inference@8.0m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_left         val=0.5 | r=+0.6500 | market_zone_inference@7.5m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | wait               val=0.5 | r=+0.7300 | pedestrian_crossing@9.1m | stage=clearing      [safe✓ [AVOIDED↯]]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@7.8m | stage=active        [safe✓]
+  step  6 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@6.8m | stage=active        [safe✓]
+  step  7 ✓ | change_lane_left   val=0.5 | r=+0.6500 | pedestrian_crossing@5.9m | stage=active        [safe✓]
+  step  8 ✗ | change_lane_left   val=0.5 | r=+0.2750 | pedestrian_crossing@5.1m | stage=active        [safe✓]
+  step  9 ✗ | change_lane_left   val=0.5 | r=+0.2260 | pedestrian_crossing@4.4m | stage=active        [safe✓]
+  step 10 ✗ | change_lane_left   val=0.5 | r=+0.1760 | pedestrian_crossing@3.7m | stage=active        [safe✓]
+  step 11 ✗ | brake              val=0.7 | r=+0.1750 | pedestrian_crossing@2.6m | stage=active
+  step 12 ✗ | steer_right        val=0.5 | r=+0.1750 | pedestrian_crossing@1.4m | stage=active
+  step 13 ✗ | brake              val=0.7 | r=+0.1750 | pedestrian_crossing@0.6m | stage=active
+  step 14 ✗ | change_lane_left   val=0.5 | r=+0.1750 | pedestrian_crossing@0.4m | stage=active
+  step 15 ✗ | brake              val=0.7 | r=+0.1750 | pedestrian_crossing@1.4m | stage=active
+  step 16 ✗ | brake              val=0.7 | r=+0.2750 | market_zone_inference@clear | stage=active        [safe✓]
+  step 17 ✗ | change_lane_left   val=0.5 | r=+0.2750 | market_zone_inference@clear | stage=active        [safe✓]
+  step 18 ✗ | wait               val=0.5 | r=+0.2750 | market_zone_inference@clear | stage=active        [safe✓]
+  step 19 ✗ | steer_right        val=0.5 | r=+0.2750 | market_zone_inference@clear | stage=active        [safe✓]
+  step 20 ✗ | accelerate         val=0.5 | r=+0.2750 | market_zone_inference@clear | stage=active        [safe✓]
+  step 21 ✗ | change_lane_right  val=0.5 | r=+0.2750 | market_zone_inference@clear | stage=active        [safe✓]
+  step 22 ✗ | change_lane_right  val=0.5 | r=+0.2060 | market_zone_inference@clear | stage=active        [safe✓]
+  [LEARNER] ε=0.667  Q-states=64  collisions=0  entropy=1.83
+
+  [RESULT] ✅ SUCCESS  steps=22  total_reward=8.0380  end=timeout
+           per-step: avg=0.3654  best=0.7300  worst=0.1750
+           roll10=5.5150  SR(last20)=86.7%  tier=beginner  diff=0.35
+
+  ⏱  0.1s
+
+
+==================================================================
+  EPISODE 16/50  [curriculum]
+  scenario=                            tier=beginner  diff=0.35
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_left   val=0.5 | r=+0.6500 | animal_crossing@12.8m | stage=approaching   [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: cow_0→rush(20%)
+  step  2 ✓ | steer_right        val=0.5 | r=+0.6500 | animal_crossing@12.4m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_left         val=0.5 | r=+0.6500 | animal_crossing@12.1m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | steer_right        val=0.5 | r=+0.6500 | pedestrian_crossing@9.1m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@10.6m | stage=clearing      [safe✓]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@9.2m | stage=clearing      [safe✓]
+  step  7 ✓ | steer_right        val=0.5 | r=+0.6500 | pedestrian_crossing@8.2m | stage=clearing      [safe✓]
+  step  8 ✓ | steer_left         val=0.5 | r=+0.9990 | pedestrian_crossing@7.1m | stage=active        [safe✓ cleared✓]
+  [LEARNER] ε=0.659  Q-states=67  collisions=0  entropy=1.32
+
+  [RESULT] ✅ SUCCESS  steps=8  total_reward=5.5490  end=cleared
+           per-step: avg=0.6936  best=0.9990  worst=0.6500
+           roll10=5.7100  SR(last20)=87.5%  tier=beginner  diff=0.45
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 17/50  [curriculum]
+  scenario=                            tier=beginner  diff=0.45
+------------------------------------------------------------------
+  step  1 ✓ | wait               val=0.5 | r=+0.6500 | police_override@10.0m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: traffic_police_0→rush(20%)
+  step  2 ✓ | steer_left         val=0.5 | r=+0.6500 | police_override@10.0m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_left         val=0.5 | r=+0.6500 | police_override@10.0m | stage=clearing      [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@11.7m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@10.7m | stage=clearing      [safe✓]
+  step  6 ✓ | brake              val=0.7 | r=+0.6500 | animal_crossing@10.4m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@9.8m | stage=clearing      [safe✓]
+  step  8 ✓ | accelerate         val=0.5 | r=+0.9990 | animal_crossing@8.8m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.652  Q-states=70  collisions=0  entropy=1.21
+
+  [RESULT] ✅ SUCCESS  steps=8  total_reward=5.5490  end=cleared
+           per-step: avg=0.6936  best=0.9990  worst=0.6500
+           roll10=5.5917  SR(last20)=88.2%  tier=beginner  diff=0.45
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 18/50  [curriculum]
+  scenario=                            tier=beginner  diff=0.45
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_right  val=0.5 | r=+0.6500 | hospital_zone_inference@13.7m | stage=approaching   [safe✓]
+  CF: change_lane_right(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pedestrian_0→rush(20%)
+  step  2 ✓ | accelerate         val=0.5 | r=+0.6500 | hospital_zone_inference@13.1m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | accelerate         val=0.5 | r=+0.6500 | ambulance_approach@10.2m | stage=active        [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | change_lane_left   val=0.5 | r=+0.6500 | ambulance_approach@7.0m | stage=active        [safe✓]
+  step  5 ✓ | steer_right        val=0.5 | r=+0.6500 | ambulance_approach@3.6m | stage=active        [safe✓]
+  step  6 ✗ | steer_right        val=0.5 | r=+0.0680 | ambulance_approach@0.3m | stage=active        [COLLISION! near-miss]
+  [LEARNER] ε=0.644  Q-states=75  collisions=1  entropy=1.33
+
+  [RESULT] ❌ FAIL     steps=6  total_reward=3.3180  end=collision
+           per-step: avg=0.5530  best=0.6500  worst=0.0680
+           roll10=5.2386  SR(last20)=83.3%  tier=intermediate  diff=0.51
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 19/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.51
+------------------------------------------------------------------
+  step  1 ✓ | steer_left         val=0.5 | r=+0.6500 | school_zone_inference@10.3m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: pedestrian_0→rush(20%) | pedestrian_1→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | school_zone_inference@9.6m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | wait               val=0.5 | r=+0.6500 | school_zone_inference@8.9m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | brake              val=0.7 | r=+0.6500 | police_override@18.0m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | police_override@17.6m | stage=clearing      [safe✓]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | police_override@16.8m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.9990 | police_override@15.6m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.636  Q-states=78  collisions=0  entropy=1.28
+
+  [RESULT] ✅ SUCCESS  steps=7  total_reward=4.8990  end=cleared
+           per-step: avg=0.6999  best=0.9990  worst=0.6500
+           roll10=5.6567  SR(last20)=84.2%  tier=intermediate  diff=0.60
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 20/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.60
+------------------------------------------------------------------
+  step  1 ✓ | steer_right        val=0.5 | r=+0.6500 | ambulance_approach@4.9m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: wait(0.885)
+  beliefs: ambulance_0→rush(20%)
+  step  2 ✗ | brake              val=0.7 | r=+0.0680 | ambulance_approach@0.9m | stage=approaching   [COLLISION! near-miss]
+  CF: brake(r=0.068) ~ suboptimal | best alt: wait(0.810)
+  [LEARNER] ε=0.628  Q-states=78  collisions=1  entropy=0.69
+
+  ┌─ LEARNING PROGRESS (ep 20) ──────────────────────────────
+  │  Early phase:  reward=8.754  success=100.0%  collisions/ep=0.00
+  │  Latest phase: reward=4.007  success=60.0%  collisions/ep=0.40
+  │  Trend: ↓ declining  (-54.2% reward change)
+  │  Q-states learned: 78
+  └──────────────────────────────────────────────────
+
+  [RESULT] ❌ FAIL     steps=2  total_reward=0.7180  end=collision
+           per-step: avg=0.3590  best=0.6500  worst=0.0680
+           roll10=4.9617  SR(last20)=80.0%  tier=intermediate  diff=0.51
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 21/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.51
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | rain_slippery_road@13.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pothole_0→rush(20%) | bike_1→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@13.2m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | animal_crossing@10.3m | stage=clearing      [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@9.5m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@8.3m | stage=clearing      [safe✓]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.5330 | animal_crossing@6.8m | stage=active        [safe✓]
+  step  7 ✗ | accelerate         val=0.5 | r=+0.4160 | animal_crossing@5.0m | stage=active        [safe✓]
+  step  8 ✓ | wait               val=0.5 | r=+0.6500 | animal_crossing@3.4m | stage=active        [safe✓]
+  step  9 ✓ | horn               val=0.5 | r=+0.5500 | animal_crossing@2.7m | stage=active
+  step 10 ✓ | brake              val=0.7 | r=+0.6500 | animal_crossing@3.1m | stage=active        [safe✓]
+  step 11 ✓ | steer_left         val=0.5 | r=+0.6500 | animal_crossing@3.6m | stage=active        [safe✓]
+  step 12 ✓ | brake              val=0.7 | r=+0.6500 | animal_crossing@4.3m | stage=active        [safe✓]
+  step 13 ✓ | wait               val=0.5 | r=+0.6500 | animal_crossing@5.0m | stage=active        [safe✓]
+  step 14 ✓ | wait               val=0.5 | r=+0.6500 | animal_crossing@5.7m | stage=active        [safe✓]
+  step 15 ✓ | wait               val=0.5 | r=+0.5330 | rain_slippery_road@12.2m | stage=active        [safe✓]
+  step 16 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@12.2m | stage=active        [safe✓]
+  step 17 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@12.3m | stage=active        [safe✓]
+  step 18 ✓ | steer_left         val=0.5 | r=+0.6500 | rain_slippery_road@12.4m | stage=active        [safe✓]
+  step 19 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@12.5m | stage=active        [safe✓]
+  step 20 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@12.6m | stage=active        [safe✓]
+  step 21 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@12.9m | stage=active        [safe✓]
+  step 22 ✓ | steer_left         val=0.5 | r=+0.6500 | rain_slippery_road@13.3m | stage=active        [safe✓]
+  step 23 ✗ | accelerate         val=0.5 | r=+0.4880 | rain_slippery_road@13.2m | stage=active        [safe✓]
+  [LEARNER] ε=0.621  Q-states=85  collisions=0  entropy=1.47
+
+  [RESULT] ✅ SUCCESS  steps=23  total_reward=14.2200  end=timeout
+           per-step: avg=0.6183  best=0.6500  worst=0.4160
+           roll10=6.0238  SR(last20)=80.0%  tier=intermediate  diff=0.45
+
+  ⏱  0.1s
+
+
+==================================================================
+  EPISODE 22/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.45
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_right  val=0.5 | r=+0.6500 | pothole_ahead@16.0m | stage=approaching   [safe✓]
+  CF: change_lane_right(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pothole_0→rush(20%)
+  step  2 ✓ | accelerate         val=0.5 | r=+0.6500 | pothole_ahead@15.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  step  3 ✓ | change_lane_left   val=0.5 | r=+0.6500 | speed_breaker@13.2m | stage=clearing      [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  step  4 ✓ | change_lane_left   val=0.5 | r=+0.6500 | speed_breaker@12.8m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | speed_breaker@12.0m | stage=clearing      [safe✓]
+  step  6 ✓ | change_lane_right  val=0.5 | r=+0.9990 | speed_breaker@11.2m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.613  Q-states=85  collisions=0  entropy=1.10
+
+  [RESULT] ✅ SUCCESS  steps=6  total_reward=4.2490  end=cleared
+           per-step: avg=0.7082  best=0.9990  worst=0.6500
+           roll10=6.0238  SR(last20)=80.0%  tier=intermediate  diff=0.60
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 23/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.60
+------------------------------------------------------------------
+  step  1 ✓ | steer_right        val=0.5 | r=+0.6500 | rain_slippery_road@10.0m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: pothole_0→rush(20%) | pothole_1→rush(20%) | car_2→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@10.0m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_right        val=0.5 | r=+0.6500 | animal_crossing@11.0m | stage=clearing      [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@10.2m | stage=clearing      [safe✓]
+  step  5 ✗ | accelerate         val=0.5 | r=+0.0680 | animal_crossing@9.1m | stage=clearing      [COLLISION! near-miss]
+  [LEARNER] ε=0.606  Q-states=86  collisions=1  entropy=1.05
+
+  [RESULT] ❌ FAIL     steps=5  total_reward=2.6680  end=collision
+           per-step: avg=0.5336  best=0.6500  worst=0.0680
+           roll10=5.6057  SR(last20)=75.0%  tier=intermediate  diff=0.50
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 24/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.50
+------------------------------------------------------------------
+  step  1 ✓ | brake              val=0.7 | r=+0.6500 | market_zone_inference@8.5m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  beliefs: pedestrian_0→rush(20%) | auto_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | market_zone_inference@8.0m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | steer_left         val=0.5 | r=+0.6500 | traffic_jam@12.7m  | stage=clearing      [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | steer_left         val=0.5 | r=+0.6500 | traffic_jam@12.7m  | stage=clearing      [safe✓]
+  step  5 ✓ | steer_left         val=0.5 | r=+0.5330 | traffic_jam@12.8m  | stage=clearing      [safe✓]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | traffic_jam@12.4m  | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.6500 | traffic_jam@11.7m  | stage=clearing      [safe✓]
+  step  8 ✓ | accelerate         val=0.5 | r=+0.9990 | traffic_jam@10.7m  | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.599  Q-states=86  collisions=0  entropy=1.08
+
+  [RESULT] ✅ SUCCESS  steps=8  total_reward=5.4320  end=cleared
+           per-step: avg=0.6790  best=0.9990  worst=0.5330
+           roll10=5.4640  SR(last20)=75.0%  tier=intermediate  diff=0.60
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 25/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.60
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | rain_slippery_road@13.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pothole_0→rush(20%) | bike_1→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@13.2m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_left         val=0.5 | r=+0.6500 | rain_slippery_road@12.8m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | steer_right        val=0.5 | r=+0.6500 | pedestrian_crossing@7.4m | stage=active        [safe✓]
+  step  5 ✓ | change_lane_left   val=0.5 | r=+0.6500 | pedestrian_crossing@6.2m | stage=active        [safe✓]
+  step  6 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@4.8m | stage=active        [safe✓]
+  step  7 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@3.9m | stage=active        [safe✓]
+  step  8 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@3.1m | stage=active        [safe✓]
+  step  9 ✓ | change_lane_left   val=0.5 | r=+0.5500 | pedestrian_crossing@2.1m | stage=active
+  step 10 ✓ | brake              val=0.7 | r=+0.5500 | pedestrian_crossing@1.4m | stage=active
+  step 11 ✓ | brake              val=0.7 | r=+0.5500 | pedestrian_crossing@1.4m | stage=active
+  step 12 ✗ | brake              val=0.7 | r=+0.4510 | pedestrian_crossing@2.1m | stage=active
+  step 13 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@3.0m | stage=active        [safe✓]
+  step 14 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@4.0m | stage=active        [safe✓]
+  step 15 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@5.3m | stage=active        [safe✓]
+  step 16 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@18.7m | stage=clearing      [safe✓]
+  step 17 ✓ | accelerate         val=0.5 | r=+0.9900 | pedestrian_crossing@18.0m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.592  Q-states=87  collisions=0  entropy=1.60
+
+  [RESULT] ✅ SUCCESS  steps=17  total_reward=10.8910  end=cleared
+           per-step: avg=0.6406  best=0.9900  worst=0.4510
+           roll10=5.7493  SR(last20)=75.0%  tier=intermediate  diff=0.60
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 26/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.60
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | rain_slippery_road@13.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pothole_0→rush(20%) | bike_1→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@13.2m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@13.2m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | change_lane_right  val=0.5 | r=+0.6500 | animal_crossing@11.2m | stage=clearing      [safe✓]
+  step  5 ✓ | horn               val=0.5 | r=+0.6500 | animal_crossing@11.0m | stage=clearing      [safe✓]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@10.5m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@9.6m | stage=clearing      [safe✓]
+  step  8 ✓ | accelerate         val=0.5 | r=+0.9990 | animal_crossing@8.3m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.585  Q-states=87  collisions=0  entropy=1.39
+
+  [RESULT] ✅ SUCCESS  steps=8  total_reward=5.5490  end=cleared
+           per-step: avg=0.6936  best=0.9990  worst=0.6500
+           roll10=5.7493  SR(last20)=75.0%  tier=intermediate  diff=0.60
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 27/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.60
+------------------------------------------------------------------
+  step  1 ✓ | steer_left         val=0.5 | r=+0.6500 | market_zone_inference@8.6m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: pedestrian_0→rush(20%) | auto_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | steer_right        val=0.5 | r=+0.6500 | market_zone_inference@8.0m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | market_zone_inference@7.5m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | wait               val=0.5 | r=+0.7300 | police_override@18.0m | stage=clearing      [safe✓ [AVOIDED↯]]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | police_override@17.6m | stage=clearing      [safe✓]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | police_override@16.8m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.9990 | police_override@15.6m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.578  Q-states=88  collisions=0  entropy=1.48
+
+  [RESULT] ✅ SUCCESS  steps=7  total_reward=4.9790  end=cleared
+           per-step: avg=0.7113  best=0.9990  worst=0.6500
+           roll10=5.6923  SR(last20)=75.0%  tier=intermediate  diff=0.60
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 28/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.60
+------------------------------------------------------------------
+  step  1 ✓ | wait               val=0.5 | r=+0.6500 | ambulance_approach@5.0m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: ambulance_0→rush(20%)
+  step  2 ✗ | brake              val=0.7 | r=+0.0680 | bike_blind_spot@1.1m | stage=active        [COLLISION! near-miss]
+  CF: brake(r=0.068) ~ suboptimal | best alt: wait(0.810)
+  [LEARNER] ε=0.571  Q-states=88  collisions=1  entropy=0.69
+
+  [RESULT] ❌ FAIL     steps=2  total_reward=0.7180  end=collision
+           per-step: avg=0.3590  best=0.6500  worst=0.0680
+           roll10=5.4323  SR(last20)=70.0%  tier=intermediate  diff=0.50
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 29/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.50
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | traffic_light_ambiguity@10.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: car_0→rush(20%) | traffic_police_1→rush(20%) | truck_2→rush(20%)
+  step  2 ✓ | steer_left         val=0.5 | r=+0.6500 | traffic_light_ambiguity@10.2m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_left         val=0.5 | r=+0.6500 | ambulance_approach@10.4m | stage=active        [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | change_lane_left   val=0.5 | r=+0.6500 | ambulance_approach@7.1m | stage=active        [safe✓]
+  step  5 ✓ | change_lane_right  val=0.5 | r=+0.6500 | ambulance_approach@3.2m | stage=active        [safe✓]
+  step  6 ✗ | brake              val=0.7 | r=+0.3250 | ambulance_approach@1.9m | stage=active        [near-miss]
+  step  7 ✓ | horn               val=0.5 | r=+0.6500 | ambulance_approach@5.5m | stage=active        [safe✓]
+  step  8 ✓ | change_lane_right  val=0.5 | r=+0.6500 | ambulance_approach@9.5m | stage=active        [safe✓]
+  step  9 ✓ | change_lane_right  val=0.5 | r=+0.6500 | ambulance_approach@13.7m | stage=clearing      [safe✓]
+  step 10 ✓ | accelerate         val=0.5 | r=+0.9990 | ambulance_approach@17.3m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.564  Q-states=90  collisions=0  entropy=1.70
+
+  [RESULT] ✅ SUCCESS  steps=10  total_reward=6.5240  end=cleared
+           per-step: avg=0.6524  best=0.9990  worst=0.3250
+           roll10=5.5948  SR(last20)=75.0%  tier=intermediate  diff=0.60
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 30/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.60
+------------------------------------------------------------------
+  step  1 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@10.0m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  beliefs: pothole_0→rush(20%) | pothole_1→rush(20%) | car_2→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | bike_blind_spot@10.0m | stage=clearing      [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | accelerate         val=0.5 | r=+0.6500 | ambulance_approach@8.5m | stage=active        [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: change_lane_left(0.835)
+  step  4 ✓ | steer_right        val=0.5 | r=+0.6500 | ambulance_approach@4.7m | stage=active        [safe✓]
+  step  5 ✗ | wait               val=0.5 | r=+0.0680 | ambulance_approach@1.0m | stage=active        [COLLISION! near-miss]
+  [LEARNER] ε=0.557  Q-states=90  collisions=1  entropy=1.33
+
+  ┌─ LEARNING PROGRESS (ep 30) ──────────────────────────────
+  │  Early phase:  reward=7.728  success=100.0%  collisions/ep=0.00
+  │  Latest phase: reward=5.252  success=71.4%  collisions/ep=0.29
+  │  Trend: ↓ declining  (-32.0% reward change)
+  │  Q-states learned: 90
+  └──────────────────────────────────────────────────
+
+  [RESULT] ❌ FAIL     steps=5  total_reward=2.6680  end=collision
+           per-step: avg=0.5336  best=0.6500  worst=0.0680
+           roll10=5.7898  SR(last20)=75.0%  tier=intermediate  diff=0.50
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 31/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.50
+------------------------------------------------------------------
+  step  1 ✓ | steer_left         val=0.5 | r=+0.6500 | traffic_light_ambiguity@11.0m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: car_0→rush(20%) | traffic_police_1→rush(20%) | truck_2→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | traffic_light_ambiguity@11.0m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | wait               val=0.5 | r=+0.6500 | traffic_light_ambiguity@11.0m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | steer_left         val=0.5 | r=+0.6500 | animal_crossing@12.1m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@11.4m | stage=clearing      [safe✓]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@10.4m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.9990 | animal_crossing@9.0m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.550  Q-states=90  collisions=0  entropy=1.28
+
+  [RESULT] ✅ SUCCESS  steps=7  total_reward=4.8990  end=cleared
+           per-step: avg=0.6999  best=0.9990  worst=0.6500
+           roll10=4.8577  SR(last20)=75.0%  tier=intermediate  diff=0.60
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 32/50  [curriculum]
+  scenario=                            tier=intermediate  diff=0.60
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_right  val=0.5 | r=+0.6500 | rain_slippery_road@14.0m | stage=approaching   [safe✓]
+  CF: change_lane_right(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pothole_0→rush(20%) | bike_1→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@14.0m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | speed_breaker@14.0m | stage=clearing      [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | brake              val=0.7 | r=+0.5330 | speed_breaker@14.0m | stage=clearing      [safe✓]
+  step  5 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@19.2m | stage=clearing      [safe✓]
+  step  6 ✓ | change_lane_right  val=0.5 | r=+0.6500 | rain_slippery_road@19.2m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.6500 | rain_slippery_road@19.0m | stage=clearing      [safe✓]
+  step  8 ✓ | accelerate         val=0.5 | r=+0.6500 | rain_slippery_road@18.4m | stage=clearing      [safe✓]
+  step  9 ✓ | accelerate         val=0.5 | r=+0.9990 | rain_slippery_road@17.4m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.544  Q-states=92  collisions=0  entropy=1.31
+
+  [RESULT] ✅ SUCCESS  steps=9  total_reward=6.0820  end=cleared
+           per-step: avg=0.6758  best=0.9990  worst=0.5330
+           roll10=5.0410  SR(last20)=75.0%  tier=advanced  diff=0.75
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 33/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@10.0m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  beliefs: pothole_0→rush(20%) | pothole_1→rush(20%) | car_2→rush(20%)
+  step  2 ✓ | change_lane_left   val=0.5 | r=+0.6500 | rain_slippery_road@10.1m | stage=approaching   [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | wait               val=0.5 | r=+0.6500 | ambulance_approach@8.2m | stage=active        [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | steer_left         val=0.5 | r=+0.6500 | animal_crossing@12.2m | stage=clearing      [safe✓]
+  step  5 ✗ | accelerate         val=0.5 | r=+0.0680 | animal_crossing@11.5m | stage=clearing      [COLLISION! near-miss]
+  [LEARNER] ε=0.537  Q-states=92  collisions=1  entropy=1.61
+
+  [RESULT] ❌ FAIL     steps=5  total_reward=2.6680  end=collision
+           per-step: avg=0.5336  best=0.6500  worst=0.0680
+           roll10=5.0410  SR(last20)=70.0%  tier=advanced  diff=0.65
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 34/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.65
+------------------------------------------------------------------
+  step  1 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@11.3m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  beliefs: bike_0→rush(20%) | car_1→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@10.5m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_left         val=0.5 | r=+0.6500 | traffic_jam@8.8m   | stage=active        [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | brake              val=0.7 | r=+0.6500 | traffic_jam@7.3m   | stage=active        [safe✓]
+  step  5 ✓ | steer_left         val=0.5 | r=+0.6500 | traffic_jam@6.0m   | stage=active        [safe✓]
+  step  6 ✓ | brake              val=0.7 | r=+0.6500 | traffic_jam@4.3m   | stage=active        [safe✓]
+  step  7 ✗ | brake              val=0.7 | r=+0.3250 | traffic_jam@2.8m   | stage=active        [near-miss]
+  step  8 ✗ | brake              val=0.7 | r=+0.2670 | traffic_jam@2.9m   | stage=active        [near-miss]
+  step  9 ✗ | brake              val=0.7 | r=+0.4160 | traffic_jam@4.0m   | stage=active        [safe✓]
+  step 10 ✗ | brake              val=0.7 | r=+0.2990 | traffic_jam@5.6m   | stage=active        [safe✓]
+  step 11 ✗ | brake              val=0.7 | r=+0.2600 | traffic_jam@6.7m   | stage=active        [safe✓]
+  step 12 ✓ | steer_left         val=0.5 | r=+0.6500 | traffic_jam@8.3m   | stage=active        [safe✓]
+  step 13 ✓ | wait               val=0.5 | r=+0.6500 | traffic_jam@9.8m   | stage=clearing      [safe✓]
+  step 14 ✓ | accelerate         val=0.5 | r=+0.6500 | traffic_jam@11.8m  | stage=clearing      [safe✓]
+  step 15 ✓ | accelerate         val=0.5 | r=+0.6500 | traffic_jam@13.8m  | stage=clearing      [safe✓]
+  step 16 ✓ | steer_right        val=0.5 | r=+0.6500 | traffic_jam@13.0m  | stage=clearing      [safe✓]
+  step 17 ✓ | horn               val=0.5 | r=+0.9900 | traffic_jam@12.2m  | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.531  Q-states=92  collisions=0  entropy=1.50
+
+  [RESULT] ✅ SUCCESS  steps=17  total_reward=9.7070  end=cleared
+           per-step: avg=0.5710  best=0.9900  worst=0.2600
+           roll10=5.4685  SR(last20)=70.0%  tier=advanced  diff=0.75
+
+  ⏱  0.1s
+
+
+==================================================================
+  EPISODE 35/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | rain_slippery_road@9.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: pothole_0→rush(20%) | pothole_1→rush(20%) | car_2→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@9.2m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | speed_breaker@13.2m | stage=clearing      [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.6500 | speed_breaker@12.8m | stage=clearing      [safe✓]
+  step  5 ✗ | horn               val=0.5 | r=+0.3250 | speed_breaker@12.4m | stage=clearing      [near-miss]
+  step  6 ✗ | accelerate         val=0.5 | r=+0.3250 | speed_breaker@11.6m | stage=clearing      [near-miss]
+  step  7 ✓ | brake              val=0.7 | r=+0.6500 | speed_breaker@11.6m | stage=clearing      [safe✓]
+  step  8 ✓ | steer_left         val=0.5 | r=+0.7500 | speed_breaker@11.6m | stage=clearing      [safe✓]
+  step  9 ✓ | accelerate         val=0.5 | r=+0.6500 | speed_breaker@11.2m | stage=clearing      [safe✓]
+  step 10 ✓ | accelerate         val=0.5 | r=+0.6500 | speed_breaker@10.4m | stage=clearing      [safe✓]
+  step 11 ✓ | accelerate         val=0.5 | r=+0.5330 | speed_breaker@9.2m | stage=clearing      [safe✓]
+  step 12 ✗ | accelerate         val=0.5 | r=+0.4160 | speed_breaker@7.6m | stage=active        [safe✓]
+  step 13 ✓ | brake              val=0.7 | r=+0.5500 | speed_breaker@6.8m | stage=active
+  step 14 ✗ | wait               val=0.5 | r=+0.3250 | speed_breaker@6.1m | stage=active        [near-miss]
+  step 15 ✗ | brake              val=0.7 | r=+0.3250 | speed_breaker@6.1m | stage=active        [near-miss]
+  step 16 ✗ | wait               val=0.5 | r=+0.3250 | speed_breaker@6.1m | stage=active        [near-miss]
+  step 17 ✗ | wait               val=0.5 | r=+0.3250 | speed_breaker@6.1m | stage=active        [near-miss]
+  step 18 ✗ | accelerate         val=0.5 | r=+0.3250 | speed_breaker@5.7m | stage=active        [near-miss]
+  step 19 ✗ | brake              val=0.7 | r=+0.3250 | speed_breaker@5.7m | stage=active        [near-miss]
+  step 20 ✗ | brake              val=0.7 | r=+0.3250 | speed_breaker@5.7m | stage=active        [near-miss]
+  step 21 ✗ | wait               val=0.5 | r=+0.3250 | speed_breaker@5.7m | stage=active        [near-miss]
+  step 22 ✗ | brake              val=0.7 | r=+0.3250 | speed_breaker@5.7m | stage=active        [near-miss]
+  step 23 ✗ | wait               val=0.5 | r=+0.3250 | speed_breaker@5.7m | stage=active        [near-miss]
+  step 24 ✗ | change_lane_right  val=0.5 | r=+0.2440 | speed_breaker@5.7m | stage=active        [near-miss]
+  [LEARNER] ε=0.524  Q-states=92  collisions=0  entropy=1.47
+
+  [RESULT] ✅ SUCCESS  steps=24  total_reward=10.9430  end=timeout
+           per-step: avg=0.4560  best=0.7500  worst=0.2440
+           roll10=5.4737  SR(last20)=70.0%  tier=advanced  diff=0.65
+
+  ⏱  0.1s
+
+
+==================================================================
+  EPISODE 36/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.65
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | zone_ambiguity@18.1m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: car_0→rush(20%)
+  step  2 ✓ | accelerate         val=0.5 | r=+0.6500 | zone_ambiguity@17.8m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  step  3 ✓ | steer_left         val=0.5 | r=+0.6500 | speed_breaker@12.0m | stage=clearing      [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  step  4 ✓ | steer_left         val=0.5 | r=+0.9990 | speed_breaker@11.2m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.518  Q-states=95  collisions=0  entropy=0.69
+
+  [RESULT] ✅ SUCCESS  steps=4  total_reward=2.9490  end=cleared
+           per-step: avg=0.7373  best=0.9990  worst=0.6500
+           roll10=5.2137  SR(last20)=70.0%  tier=advanced  diff=0.75
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 37/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_right  val=0.5 | r=+0.6500 | rain_slippery_road@10.1m | stage=approaching   [safe✓]
+  CF: change_lane_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: pothole_0→rush(20%) | pothole_1→rush(20%) | car_2→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@10.1m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | wait               val=0.5 | r=+0.6500 | speed_breaker@14.0m | stage=clearing      [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | horn               val=0.5 | r=+0.6500 | speed_breaker@14.0m | stage=clearing      [safe✓]
+  step  5 ✗ | accelerate         val=0.5 | r=+0.0680 | speed_breaker@13.6m | stage=clearing      [COLLISION! near-miss]
+  [LEARNER] ε=0.512  Q-states=95  collisions=1  entropy=1.33
+
+  [RESULT] ❌ FAIL     steps=5  total_reward=2.6680  end=collision
+           per-step: avg=0.5336  best=0.6500  worst=0.0680
+           roll10=4.9826  SR(last20)=65.0%  tier=advanced  diff=0.65
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 38/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.65
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | rain_slippery_road@13.6m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pothole_0→rush(20%) | bike_1→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@13.6m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@13.6m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@8.6m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@7.3m | stage=active        [safe✓]
+  step  6 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@6.0m | stage=active        [safe✓]
+  step  7 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@5.2m | stage=active        [safe✓]
+  step  8 ✓ | steer_right        val=0.5 | r=+0.6500 | pedestrian_crossing@4.6m | stage=active        [safe✓]
+  step  9 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@3.9m | stage=active        [safe✓]
+  step 10 ✓ | steer_right        val=0.5 | r=+0.6500 | pedestrian_crossing@3.9m | stage=active        [safe✓]
+  step 11 ✓ | steer_right        val=0.5 | r=+0.6500 | pedestrian_crossing@4.5m | stage=active        [safe✓]
+  step 12 ✓ | change_lane_left   val=0.5 | r=+0.6500 | pedestrian_crossing@4.2m | stage=active        [safe✓]
+  step 13 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@5.0m | stage=active        [safe✓]
+  step 14 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@6.0m | stage=active        [safe✓]
+  step 15 ✓ | brake              val=0.7 | r=+0.5330 | pedestrian_crossing@6.9m | stage=active        [safe✓]
+  step 16 ✗ | brake              val=0.7 | r=+0.4160 | pedestrian_crossing@18.7m | stage=clearing      [safe✓]
+  step 17 ✓ | accelerate         val=0.5 | r=+0.9900 | pedestrian_crossing@18.4m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.506  Q-states=95  collisions=0  entropy=1.49
+
+  [RESULT] ✅ SUCCESS  steps=17  total_reward=11.0390  end=cleared
+           per-step: avg=0.6494  best=0.9900  worst=0.4160
+           roll10=6.0147  SR(last20)=70.0%  tier=advanced  diff=0.75
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 39/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | brake              val=0.7 | r=+0.6500 | rain_slippery_road@11.3m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  beliefs: bike_0→rush(20%) | car_1→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@10.5m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | wait               val=0.5 | r=+0.6500 | rain_slippery_road@8.8m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | wait               val=0.5 | r=+0.5330 | pedestrian_crossing@7.2m | stage=active        [safe✓]
+  step  5 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@5.7m | stage=active        [safe✓]
+  step  6 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@3.9m | stage=active        [safe✓]
+  step  7 ✗ | brake              val=0.7 | r=+0.2670 | pedestrian_crossing@2.2m | stage=active        [near-miss]
+  step  8 ✗ | brake              val=0.7 | r=+0.2080 | pedestrian_crossing@2.2m | stage=active        [near-miss]
+  step  9 ✓ | steer_right        val=0.5 | r=+0.6500 | pedestrian_crossing@3.2m | stage=active        [safe✓]
+  step 10 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@4.8m | stage=active        [safe✓]
+  step 11 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@4.6m | stage=active        [safe✓]
+  step 12 ✓ | steer_left         val=0.5 | r=+0.6500 | pedestrian_crossing@4.4m | stage=active        [safe✓]
+  step 13 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@4.7m | stage=active        [safe✓]
+  step 14 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@5.2m | stage=active        [safe✓]
+  step 15 ✓ | wait               val=0.5 | r=+0.6500 | pedestrian_crossing@5.9m | stage=active        [safe✓]
+  step 16 ✓ | brake              val=0.7 | r=+0.6500 | pedestrian_crossing@13.0m | stage=clearing      [safe✓]
+  step 17 ✓ | horn               val=0.5 | r=+0.6500 | pedestrian_crossing@13.0m | stage=clearing      [safe✓]
+  step 18 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@12.6m | stage=clearing      [safe✓]
+  step 19 ✓ | change_lane_right  val=0.5 | r=+0.6500 | pedestrian_crossing@12.2m | stage=clearing      [safe✓]
+  step 20 ✓ | accelerate         val=0.5 | r=+0.6500 | pedestrian_crossing@11.4m | stage=clearing      [safe✓]
+  step 21 ✓ | accelerate         val=0.5 | r=+0.9850 | pedestrian_crossing@10.2m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.500  Q-states=95  collisions=0  entropy=1.56
+
+  [RESULT] ✅ SUCCESS  steps=21  total_reward=13.0430  end=cleared
+           per-step: avg=0.6211  best=0.9850  worst=0.2080
+           roll10=6.6666  SR(last20)=70.0%  tier=advanced  diff=0.75
+
+  ⏱  0.1s
+
+
+==================================================================
+  EPISODE 40/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_left   val=0.5 | r=+0.6500 | ambulance_approach@5.3m | stage=approaching   [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: wait(0.885)
+  beliefs: ambulance_0→rush(20%)
+  step  2 ✗ | wait               val=0.5 | r=+0.0680 | ambulance_approach@1.9m | stage=approaching   [COLLISION! near-miss]
+  CF: wait(r=0.068) ~ suboptimal | best alt: brake(0.819)
+  [LEARNER] ε=0.494  Q-states=95  collisions=1  entropy=0.69
+
+  ┌─ LEARNING PROGRESS (ep 40) ──────────────────────────────
+  │  Early phase:  reward=6.933  success=80.0%  collisions/ep=0.20
+  │  Latest phase: reward=6.472  success=70.0%  collisions/ep=0.30
+  │  Trend: ↓ declining  (-6.7% reward change)
+  │  Q-states learned: 95
+  └──────────────────────────────────────────────────
+
+  [RESULT] ❌ FAIL     steps=2  total_reward=0.7180  end=collision
+           per-step: avg=0.3590  best=0.6500  worst=0.0680
+           roll10=6.4716  SR(last20)=70.0%  tier=advanced  diff=0.65
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 41/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.65
+------------------------------------------------------------------
+  step  1 ✓ | accelerate         val=0.5 | r=+0.6500 | hospital_zone_inference@13.3m | stage=approaching   [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.810)
+  beliefs: pedestrian_0→rush(20%)
+  step  2 ✓ | steer_right        val=0.5 | r=+0.6500 | hospital_zone_inference@12.6m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_left         val=0.5 | r=+0.6500 | speed_breaker@12.8m | stage=clearing      [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.6500 | speed_breaker@12.0m | stage=clearing      [safe✓]
+  step  5 ✓ | accelerate         val=0.5 | r=+0.9990 | speed_breaker@10.8m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.488  Q-states=96  collisions=0  entropy=0.95
+
+  [RESULT] ✅ SUCCESS  steps=5  total_reward=3.5990  end=cleared
+           per-step: avg=0.7198  best=0.9990  worst=0.6500
+           roll10=6.3416  SR(last20)=70.0%  tier=advanced  diff=0.75
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 42/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_left   val=0.5 | r=+0.6500 | multi_agent_chaos@9.1m | stage=approaching   [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: auto_0→rush(20%) | bike_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | wait               val=0.5 | r=+0.6500 | multi_agent_chaos@9.2m | stage=approaching   [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | accelerate         val=0.5 | r=+0.6500 | ambulance_approach@7.7m | stage=active        [safe✓]
+  CF: accelerate(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | steer_right        val=0.5 | r=+0.6500 | ambulance_approach@3.5m | stage=active        [safe✓]
+  step  5 ✗ | wait               val=0.5 | r=+0.0680 | ambulance_approach@1.5m | stage=active        [COLLISION! near-miss]
+  [LEARNER] ε=0.482  Q-states=100  collisions=1  entropy=1.33
+
+  [RESULT] ❌ FAIL     steps=5  total_reward=2.6680  end=collision
+           per-step: avg=0.5336  best=0.6500  worst=0.0680
+           roll10=6.0002  SR(last20)=65.0%  tier=advanced  diff=0.65
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 43/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.65
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_left   val=0.5 | r=+0.6500 | multi_agent_chaos@9.1m | stage=approaching   [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: auto_0→rush(20%) | bike_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | steer_right        val=0.5 | r=+0.6500 | multi_agent_chaos@9.2m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | steer_right        val=0.5 | r=+0.6500 | ambulance_approach@7.1m | stage=active        [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.5500 | animal_crossing@11.7m | stage=clearing
+  step  5 ✗ | brake              val=0.7 | r=+0.3250 | animal_crossing@11.4m | stage=clearing      [near-miss]
+  step  6 ✓ | brake              val=0.7 | r=+0.6500 | animal_crossing@11.2m | stage=clearing      [safe✓]
+  step  7 ✓ | brake              val=0.7 | r=+0.5330 | animal_crossing@11.0m | stage=clearing      [safe✓]
+  step  8 ✗ | brake              val=0.7 | r=+0.4160 | animal_crossing@10.9m | stage=clearing      [safe✓]
+  step  9 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@10.3m | stage=clearing      [safe✓]
+  step 10 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@9.5m | stage=clearing      [safe✓]
+  step 11 ✓ | accelerate         val=0.5 | r=+0.9990 | animal_crossing@8.3m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.476  Q-states=101  collisions=0  entropy=1.26
+
+  [RESULT] ✅ SUCCESS  steps=11  total_reward=6.7230  end=cleared
+           per-step: avg=0.6112  best=0.9990  worst=0.3250
+           roll10=6.4057  SR(last20)=70.0%  tier=advanced  diff=0.75
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 44/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_right  val=0.5 | r=+0.6500 | multi_agent_chaos@9.2m | stage=approaching   [safe✓]
+  CF: change_lane_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: auto_0→rush(20%) | bike_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | multi_agent_chaos@9.2m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | change_lane_left   val=0.5 | r=+0.6500 | speed_breaker@14.0m | stage=clearing      [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | change_lane_right  val=0.5 | r=+0.5500 | speed_breaker@14.0m | stage=clearing
+  step  5 ✗ | change_lane_right  val=0.5 | r=+0.3250 | speed_breaker@14.1m | stage=clearing      [near-miss]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | speed_breaker@13.8m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.6500 | speed_breaker@13.0m | stage=clearing      [safe✓]
+  step  8 ✗ | change_lane_right  val=0.5 | r=+0.2750 | speed_breaker@12.4m | stage=clearing      [safe✓]
+  step  9 ✗ | steer_right        val=0.5 | r=+0.3560 | speed_breaker@11.7m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.470  Q-states=102  collisions=0  entropy=1.43
+
+  [RESULT] ✅ SUCCESS  steps=9  total_reward=4.7560  end=cleared
+           per-step: avg=0.5284  best=0.6500  worst=0.2750
+           roll10=5.9106  SR(last20)=70.0%  tier=advanced  diff=0.65
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 45/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.65
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_left   val=0.5 | r=+0.6500 | multi_agent_chaos@9.1m | stage=approaching   [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: auto_0→rush(20%) | bike_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | multi_agent_chaos@9.2m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | ambulance_approach@7.3m | stage=active        [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | steer_right        val=0.5 | r=+0.5500 | animal_crossing@12.1m | stage=clearing
+  step  5 ✗ | change_lane_right  val=0.5 | r=+0.3250 | animal_crossing@11.8m | stage=clearing      [near-miss]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@11.2m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.6500 | animal_crossing@10.3m | stage=clearing      [safe✓]
+  step  8 ✓ | change_lane_left   val=0.5 | r=+0.6500 | animal_crossing@9.2m | stage=clearing      [safe✓]
+  step  9 ✓ | accelerate         val=0.5 | r=+0.9990 | animal_crossing@7.9m | stage=active        [safe✓ cleared✓]
+  [LEARNER] ε=0.465  Q-states=102  collisions=0  entropy=1.52
+
+  [RESULT] ✅ SUCCESS  steps=9  total_reward=5.7740  end=cleared
+           per-step: avg=0.6416  best=0.9990  worst=0.3250
+           roll10=5.3937  SR(last20)=70.0%  tier=advanced  diff=0.75
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 46/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | steer_right        val=0.5 | r=+0.6500 | multi_agent_chaos@9.1m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: auto_0→rush(20%) | bike_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | multi_agent_chaos@9.2m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | animal_crossing@11.0m | stage=clearing      [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | accelerate         val=0.5 | r=+0.5500 | animal_crossing@10.2m | stage=clearing
+  step  5 ✗ | accelerate         val=0.5 | r=+0.0680 | animal_crossing@9.1m | stage=clearing      [COLLISION! near-miss]
+  [LEARNER] ε=0.459  Q-states=102  collisions=1  entropy=1.05
+
+  [RESULT] ❌ FAIL     steps=5  total_reward=2.5680  end=collision
+           per-step: avg=0.5136  best=0.6500  worst=0.0680
+           roll10=5.3556  SR(last20)=65.0%  tier=advanced  diff=0.65
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 47/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.65
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_left   val=0.5 | r=+0.6500 | multi_agent_chaos@9.1m | stage=approaching   [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: auto_0→rush(20%) | bike_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | brake              val=0.7 | r=+0.6500 | multi_agent_chaos@9.2m | stage=approaching   [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  3 ✓ | wait               val=0.5 | r=+0.6500 | pothole_ahead@13.0m | stage=clearing      [safe✓]
+  CF: wait(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  4 ✓ | wait               val=0.5 | r=+0.5500 | pothole_ahead@13.0m | stage=clearing
+  step  5 ✗ | accelerate         val=0.5 | r=+0.3250 | pothole_ahead@12.6m | stage=clearing      [near-miss]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | pothole_ahead@11.8m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.9990 | pothole_ahead@10.7m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.454  Q-states=102  collisions=0  entropy=1.28
+
+  [RESULT] ✅ SUCCESS  steps=7  total_reward=4.4740  end=cleared
+           per-step: avg=0.6391  best=0.9990  worst=0.3250
+           roll10=5.5362  SR(last20)=65.0%  tier=advanced  diff=0.75
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 48/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_left   val=0.5 | r=+0.6500 | multi_agent_chaos@9.1m | stage=approaching   [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: auto_0→rush(20%) | bike_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | steer_left         val=0.5 | r=+0.6500 | multi_agent_chaos@9.3m | stage=approaching   [safe✓]
+  CF: steer_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | pothole_ahead@13.1m | stage=clearing      [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | change_lane_right  val=0.5 | r=+0.5500 | pothole_ahead@13.0m | stage=clearing
+  step  5 ✗ | accelerate         val=0.5 | r=+0.3250 | pothole_ahead@12.6m | stage=clearing      [near-miss]
+  step  6 ✓ | wait               val=0.5 | r=+0.6500 | pothole_ahead@12.2m | stage=clearing      [safe✓]
+  step  7 ✓ | accelerate         val=0.5 | r=+0.6500 | pothole_ahead@11.4m | stage=clearing      [safe✓]
+  step  8 ✓ | accelerate         val=0.5 | r=+0.9990 | pothole_ahead@10.2m | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.448  Q-states=102  collisions=0  entropy=1.67
+
+  [RESULT] ✅ SUCCESS  steps=8  total_reward=5.1240  end=cleared
+           per-step: avg=0.6405  best=0.9990  worst=0.3250
+           roll10=4.9447  SR(last20)=70.0%  tier=advanced  diff=0.75
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 49/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | change_lane_left   val=0.5 | r=+0.6500 | multi_agent_chaos@9.1m | stage=approaching   [safe✓]
+  CF: change_lane_left(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  beliefs: auto_0→rush(20%) | bike_1→rush(20%) | pedestrian_2→rush(20%)
+  step  2 ✓ | steer_right        val=0.5 | r=+0.6500 | multi_agent_chaos@9.2m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: brake(0.833)
+  step  3 ✓ | brake              val=0.7 | r=+0.6500 | traffic_jam@9.4m   | stage=clearing      [safe✓]
+  CF: brake(r=0.650) ~ suboptimal | best alt: wait(0.810)
+  step  4 ✓ | horn               val=0.5 | r=+0.5500 | traffic_jam@9.5m   | stage=clearing
+  step  5 ✗ | accelerate         val=0.5 | r=+0.3250 | traffic_jam@9.3m   | stage=clearing      [near-miss]
+  step  6 ✓ | accelerate         val=0.5 | r=+0.6500 | traffic_jam@8.8m   | stage=active        [safe✓]
+  step  7 ✓ | wait               val=0.5 | r=+0.6500 | traffic_jam@8.3m   | stage=active        [safe✓]
+  step  8 ✓ | wait               val=0.5 | r=+0.6500 | traffic_jam@10.0m  | stage=clearing      [safe✓]
+  step  9 ✓ | steer_left         val=0.5 | r=+0.9990 | traffic_jam@9.4m   | stage=clearing      [safe✓ cleared✓]
+  [LEARNER] ε=0.443  Q-states=103  collisions=0  entropy=1.89
+
+  [RESULT] ✅ SUCCESS  steps=9  total_reward=5.7740  end=cleared
+           per-step: avg=0.6416  best=0.9990  worst=0.3250
+           roll10=4.2178  SR(last20)=70.0%  tier=advanced  diff=0.75
+
+  ⏱  0.0s
+
+
+==================================================================
+  EPISODE 50/50  [curriculum]
+  scenario=                            tier=advanced  diff=0.75
+------------------------------------------------------------------
+  step  1 ✓ | steer_right        val=0.5 | r=+0.6500 | ambulance_approach@4.9m | stage=approaching   [safe✓]
+  CF: steer_right(r=0.650) ~ suboptimal | best alt: wait(0.885)
+  beliefs: ambulance_0→rush(20%)
+  step  2 ✗ | steer_right        val=0.5 | r=+0.0680 | ambulance_approach@0.8m | stage=approaching   [COLLISION! near-miss]
+  CF: steer_right(r=0.068) ~ suboptimal | best alt: brake(0.819)
+  [LEARNER] ε=0.438  Q-states=103  collisions=1  entropy=-0.00
+
+  ┌─ LEARNING PROGRESS (ep 50) ──────────────────────────────
+  │  Early phase:  reward=6.432  success=83.3%  collisions/ep=0.17
+  │  Latest phase: reward=4.662  success=66.7%  collisions/ep=0.33
+  │  Trend: ↓ declining  (-27.5% reward change)
+  │  Q-states learned: 103
+  └──────────────────────────────────────────────────
+
+  [RESULT] ❌ FAIL     steps=2  total_reward=0.7180  end=collision
+           per-step: avg=0.3590  best=0.6500  worst=0.0680
+           roll10=4.2178  SR(last20)=70.0%  tier=advanced  diff=0.65
+
+  ⏱  0.0s
+
+
+==================================================================
+  POLICY LEARNING SUMMARY
+------------------------------------------------------------------
+  Episodes:          50
+  Q-states learned:  103
+  Total Q-updates:   471
+  Final epsilon:     0.4375  (started at 0.8)
+
+  EARLY phase (12 eps): reward=6.4318  success=83.3%  collision=0.17/ep
+  LATE  phase (12 eps):  reward=4.6616  success=66.7%  collision=0.33/ep
+
+  Reward improved?   ❌ NO  (-27.5% vs early phase)
+  Policy saved to:   C:\Users\samatha\OneDrive\Documents\greenops-openenv\autodrive_env\server\..\policy_learned.json
+==================================================================
+
+==================================================================
+  Training complete.
+  Episodes: 50 | Mean reward: 5.653 | Last-10 mean: 4.204 | Success rate: 64.0%
+  Reward log saved to: C:\Users\samatha\OneDrive\Documents\greenops-openenv\autodrive_env\server\..\reward_log.json
+  Reward improved (last-10 vs overall mean): False
+==================================================================

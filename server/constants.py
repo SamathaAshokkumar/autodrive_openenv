@@ -32,6 +32,40 @@ SCENARIO_TYPES = {
     "highway_merge_truck":     {"tier": 4, "min_difficulty": 0.65},
     "multi_agent_chaos":       {"tier": 4, "min_difficulty": 0.70},
     "adversarial":             {"tier": 5, "min_difficulty": 0.75},
+    # Zone-inference scenarios (Theme 3.1 — world modeling)
+    "hospital_zone_inference": {"tier": 2, "min_difficulty": 0.35},
+    "school_zone_inference":   {"tier": 2, "min_difficulty": 0.35},
+    "temple_zone_inference":   {"tier": 3, "min_difficulty": 0.45},
+    "market_zone_inference":   {"tier": 2, "min_difficulty": 0.38},
+    "zone_ambiguity":          {"tier": 4, "min_difficulty": 0.60},
+}
+
+# Actor intent vocabulary (used by IntentInferenceAgent)
+ACTOR_INTENTS = {
+    "rush":       "Driver in a hurry — weaves, cuts gaps, may run signals",
+    "cautious":   "Slow, careful driver — predictable, respects rules",
+    "distracted": "Mobile-phone / inattentive driver — erratic, drifts",
+    "aggressive": "Hostile driver — tailgates, cuts in, ignores signals",
+    "yielding":   "Cooperative driver — signals intent, gives right-of-way",
+}
+
+# Negotiation outcome vocabulary
+NEGOTIATION_OUTCOMES = {
+    "smooth_pass":    "Ego proceeds without delay — good negotiation",
+    "delayed_pass":   "Ego waits briefly then proceeds — acceptable",
+    "deadlock":       "Both agents pause — minor inefficiency",
+    "collision_risk": "Confrontation — likely near-miss or worse",
+}
+
+# Zone type vocabulary (for internal labeling only — NEVER exposed to agent)
+ZONE_TYPES = {
+    "hospital_zone":    "Slow, no horn, watch for ambulances",
+    "school_zone":      "Very slow, watch for children, especially at school hours",
+    "temple_zone":      "Slow, no horn, expect processions",
+    "market_zone":      "Slow, high pedestrian density, expect jaywalking",
+    "highway_merge":    "Assertive merge, check blind spots, maintain speed",
+    "police_checkpoint": "Full compliance, no violations",
+    "construction_zone": "Slow, watch workers, expect lane shifts",
 }
 
 DEFAULT_VEHICLE_PROFILE = {
@@ -61,6 +95,12 @@ DEFAULT_SCENE_ENV = {
     "lane_status": "clear",
     "traffic_signal": "none",
     "region": "india",
+    # Road geometry — standard 2-lane undivided Indian road
+    "road_width_m": 7.2,        # total road width including shoulders
+    "lane_width_m": 3.6,        # width of one lane
+    "num_lanes": 2,             # total lanes (both directions)
+    "shoulder_width_m": 1.1,    # paved shoulder each side
+    "surface_type": "asphalt",  # asphalt | concrete | gravel | waterlogged
 }
 
 MAX_STEPS = 20

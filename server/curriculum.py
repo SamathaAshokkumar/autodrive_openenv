@@ -9,19 +9,25 @@ Progressive difficulty design:
 """
 
 from collections import defaultdict
+import logging
 import random
-from typing import Dict, List
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from .constants import SCENARIO_TYPES
+
+if TYPE_CHECKING:
+    from .adversarial_designer import AdversarialDesigner
+
+logger = logging.getLogger(__name__)
 
 MASTERY_THRESHOLD = 0.70   # success-rate required to consider a scenario type mastered
 MIN_EPISODES_PER_SCENARIO = 3  # min episodes before a scenario can be marked mastered
 
 DIFFICULTY_TIERS = [
-    {"name": "warmup",       "max_diff": 0.25, "min_episodes": 4,  "advance_rate": 0.55},
-    {"name": "beginner",     "max_diff": 0.45, "min_episodes": 5,  "advance_rate": 0.60},
-    {"name": "intermediate", "max_diff": 0.60, "min_episodes": 6,  "advance_rate": 0.65},
-    {"name": "advanced",     "max_diff": 0.75, "min_episodes": 8,  "advance_rate": 0.70},
+    {"name": "warmup",       "max_diff": 0.25, "min_episodes": 8,  "advance_rate": 0.62},
+    {"name": "beginner",     "max_diff": 0.45, "min_episodes": 10, "advance_rate": 0.65},
+    {"name": "intermediate", "max_diff": 0.60, "min_episodes": 12, "advance_rate": 0.68},
+    {"name": "advanced",     "max_diff": 0.75, "min_episodes": 15, "advance_rate": 0.72},
     {"name": "expert",       "max_diff": 0.92, "min_episodes": 0,  "advance_rate": 1.00},
 ]
 
@@ -38,6 +44,14 @@ class CurriculumController:
         self._recent_fault_types: List[str] = []
         self._consecutive_successes = 0
         self._consecutive_failures = 0
+        # Theme 4: Self-Improvement — designer is injected externally
+        self._adversarial_designer: Optional["AdversarialDesigner"] = None
+        self._self_improve_cooldown = 0   # steps before next self-improvement trigger
+        self._self_improve_triggered_count = 0
+
+    def set_adversarial_designer(self, designer: "AdversarialDesigner") -> None:
+        """Inject the AdversarialDesigner for self-improvement (Theme 4)."""
+        self._adversarial_designer = designer
 
     # ── Recording ─────────────────────────────────────────────────────────────
 
@@ -59,6 +73,8 @@ class CurriculumController:
 
         self._maybe_advance_tier()
         self._check_mastery(failure_type)
+        if self._self_improve_cooldown > 0:
+            self._self_improve_cooldown -= 1
 
     def _check_mastery(self, scenario_type: str):
         results = self.history[scenario_type]
@@ -80,8 +96,8 @@ class CurriculumController:
         if self._tier_episodes < tier["min_episodes"]:
             return
         rate = self._recent_success_rate()
-        # Momentum: 3 consecutive successes can push a tier advance even before min rate
-        if self._consecutive_successes >= 4 and rate >= tier["advance_rate"] - 0.10:
+        # Momentum: require 6 consecutive successes (up from 4) to early-advance
+        if self._consecutive_successes >= 6 and rate >= tier["advance_rate"] - 0.08:
             self._tier_index += 1
             self._tier_episodes = 0
             self._consecutive_successes = 0
@@ -163,6 +179,43 @@ class CurriculumController:
     def get_weak_spots(self) -> List[str]:
         return [s for s, rate in self.get_skill_profile().items() if rate < MASTERY_THRESHOLD]
 
+    # ── Self-improvement (Theme 4) ────────────────────────────────────────────
+
+    def should_self_improve(self) -> bool:
+        """True when the agent is stuck enough to benefit from a targeted challenge."""
+        return (
+            self._adversarial_designer is not None
+            and self._consecutive_failures >= 3
+            and self._self_improve_cooldown == 0
+        )
+
+    def generate_self_improvement_scenario(self) -> Optional[dict]:
+        """Generate a targeted adversarial scenario focused on the agent's weak spots.
+
+        Called automatically when the agent fails 3+ consecutive episodes.  This
+        implements Theme 4 (Self-Improvement): the environment adapts to the agent's
+        specific failure profile instead of replaying random scenarios.
+        """
+        if self._adversarial_designer is None:
+            return None
+        skill_profile = self.get_skill_profile()
+        difficulty = self.get_difficulty()
+        try:
+            scenario = self._adversarial_designer.design(skill_profile, difficulty)
+            self._self_improve_triggered_count += 1
+            self._self_improve_cooldown = 3   # cool-down: 3 episodes before next trigger
+            logger.info(
+                "[Self-Improve] Generated targeted scenario after %d consecutive failures "
+                "(trigger #%d). Weak spots: %s",
+                self._consecutive_failures,
+                self._self_improve_triggered_count,
+                self.get_weak_spots(),
+            )
+            return scenario
+        except Exception as exc:
+            logger.warning("Self-improvement scenario generation failed: %s", exc)
+            return None
+
     def get_stats(self) -> dict:
         return {
             "episode_count": self.episode_count,
@@ -174,4 +227,6 @@ class CurriculumController:
             "skill_profile": self.get_skill_profile(),
             "weak_spots": self.get_weak_spots(),
             "graduated": sorted(self._graduated),
+            "self_improve_triggered": self._self_improve_triggered_count,
+            "self_improve_cooldown": self._self_improve_cooldown,
         }
